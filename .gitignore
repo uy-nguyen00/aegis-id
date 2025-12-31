@@ -33,3 +33,7 @@ build/
 .vscode/
 
 .env
+
+### Project files ###
+src/main/resources/keys/local-only/
+node_modules/
