@@ -20,10 +20,8 @@ public class UserController {
     @PatchMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateProfileInfo(
-            @RequestBody
-            @Valid
-            final ProfileUpdateRequest request,
-            final Authentication principal
+        @RequestBody @Valid final ProfileUpdateRequest request,
+        final Authentication principal
     ) {
         this.userService.updateProfileInfo(request, getUserId(principal));
     }
@@ -31,10 +29,8 @@ public class UserController {
     @PostMapping("/me/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePassword(
-            @RequestBody
-            @Valid
-            final ChangePasswordRequest request,
-            final Authentication principal
+        @RequestBody @Valid final ChangePasswordRequest request,
+        final Authentication principal
     ) {
         this.userService.changePassword(request, getUserId(principal));
     }

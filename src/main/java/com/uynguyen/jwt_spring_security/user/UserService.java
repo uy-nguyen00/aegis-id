@@ -5,7 +5,6 @@ import com.uynguyen.jwt_spring_security.user.request.ProfileUpdateRequest;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 public interface UserService extends UserDetailsService {
-
     void updateProfileInfo(ProfileUpdateRequest request, String userId);
 
     void changePassword(ChangePasswordRequest request, String userId);

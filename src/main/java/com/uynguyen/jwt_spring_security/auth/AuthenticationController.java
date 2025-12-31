@@ -24,16 +24,14 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(
-            @Valid
-            @RequestBody final AuthenticationRequest request
+        @Valid @RequestBody final AuthenticationRequest request
     ) {
         return ResponseEntity.ok(this.authenticationService.login(request));
     }
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(
-            @Valid
-            @RequestBody final RegistrationRequest request
+        @Valid @RequestBody final RegistrationRequest request
     ) {
         this.authenticationService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -41,8 +39,10 @@ public class AuthenticationController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthenticationResponse> refresh(
-            @RequestBody final RefreshTokenRequest request
+        @RequestBody final RefreshTokenRequest request
     ) {
-        return ResponseEntity.ok(this.authenticationService.refreshToken(request));
+        return ResponseEntity.ok(
+            this.authenticationService.refreshToken(request)
+        );
     }
 }

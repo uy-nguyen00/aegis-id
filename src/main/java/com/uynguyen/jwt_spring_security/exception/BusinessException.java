@@ -14,7 +14,10 @@ public class BusinessException extends RuntimeException {
         this.args = args;
     }
 
-    private static String getFormattedMessage(final ErrorCode errorCode, final Object[] args) {
+    private static String getFormattedMessage(
+        final ErrorCode errorCode,
+        final Object[] args
+    ) {
         if (args != null && args.length > 0) {
             return String.format(errorCode.getDefaultMessage(), args);
         }

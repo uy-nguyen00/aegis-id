@@ -10,38 +10,28 @@ import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 
 @OpenAPIDefinition(
-        info = @Info(
-                contact = @Contact(
-                        email = "uynguyen1501@gmail.com",
-                        url = "https://github.com/uy-nguyen00"
-                ),
-                description = "OpenApi documentation",
-                title = "OpenApi specification",
-                version = "1.0",
-                termsOfService = "Terms of service"),
-        servers = {
-                @Server(
-                        description = "Local ENV",
-                        url = "http://localhost:8080"
-                ),
-                @Server(
-                        description = "PROD ENV",
-                        url = "https://your-prod-url.com"
-                )
-        },
-        security = {
-                @SecurityRequirement(
-                        name = "bearerAuth"
-                )
-        }
+    info = @Info(
+        contact = @Contact(
+            email = "uynguyen1501@gmail.com",
+            url = "https://github.com/uy-nguyen00"
+        ),
+        description = "OpenApi documentation",
+        title = "OpenApi specification",
+        version = "1.0",
+        termsOfService = "Terms of service"
+    ),
+    servers = {
+        @Server(description = "Local ENV", url = "http://localhost:8080"),
+        @Server(description = "PROD ENV", url = "https://your-prod-url.com"),
+    },
+    security = { @SecurityRequirement(name = "bearerAuth") }
 )
 @SecurityScheme(
-        name = "bearerAuth",
-        description = "JWT auth description",
-        scheme = "bearer",
-        type = SecuritySchemeType.HTTP,
-        bearerFormat = "JWT",
-        in = SecuritySchemeIn.HEADER
+    name = "bearerAuth",
+    description = "JWT auth description",
+    scheme = "bearer",
+    type = SecuritySchemeType.HTTP,
+    bearerFormat = "JWT",
+    in = SecuritySchemeIn.HEADER
 )
-public class OpenApiConfig {
-}
+public class OpenApiConfig {}

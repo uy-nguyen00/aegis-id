@@ -17,7 +17,9 @@ public class BeansConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(final AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(
+        final AuthenticationConfiguration config
+    ) throws Exception {
         return config.getAuthenticationManager();
     }
 

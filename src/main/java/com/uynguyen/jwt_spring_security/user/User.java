@@ -2,6 +2,10 @@ package com.uynguyen.jwt_spring_security.user;
 
 import com.uynguyen.jwt_spring_security.role.Role;
 import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -10,11 +14,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.util.CollectionUtils;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
 
 @Entity
 @Getter
@@ -75,17 +74,13 @@ public class User implements UserDetails {
     private LocalDateTime lastModifiedDate;
 
     @ManyToMany(
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE}, // if an user is created with a unexisting role, the role will be created
-            fetch = FetchType.EAGER
+        cascade = { CascadeType.PERSIST, CascadeType.MERGE }, // if an user is created with a unexisting role, the role will be created
+        fetch = FetchType.EAGER
     )
     @JoinTable(
-            name = "USERS_ROLES",
-            joinColumns = {
-                    @JoinColumn(name = "USER_ID")
-            },
-            inverseJoinColumns = {
-                    @JoinColumn(name = "ROLE_ID")
-            }
+        name = "USERS_ROLES",
+        joinColumns = { @JoinColumn(name = "USER_ID") },
+        inverseJoinColumns = { @JoinColumn(name = "ROLE_ID") }
     )
     private List<Role> roles;
 
@@ -96,9 +91,9 @@ public class User implements UserDetails {
         }
 
         return roles
-                .stream()
-                .map(role -> new SimpleGrantedAuthority(role.getName()))
-                .toList();
+            .stream()
+            .map(role -> new SimpleGrantedAuthority(role.getName()))
+            .toList();
     }
 
     @Override

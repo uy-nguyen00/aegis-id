@@ -1,8 +1,7 @@
 package com.uynguyen.jwt_spring_security.handler;
 
-import lombok.*;
-
 import java.util.List;
+import lombok.*;
 
 @Getter
 @AllArgsConstructor

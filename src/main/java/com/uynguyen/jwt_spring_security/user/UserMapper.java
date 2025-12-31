@@ -12,25 +12,27 @@ public class UserMapper {
 
     private final PasswordEncoder passwordEncoder;
 
-    public void mergeUserInfo(final User user, final ProfileUpdateRequest request) {
+    public void mergeUserInfo(
+        final User user,
+        final ProfileUpdateRequest request
+    ) {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setDateOfBirth(request.getDateOfBirth());
     }
 
     public User toUser(final RegistrationRequest request) {
-        return User
-                .builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
-                .password(this.passwordEncoder.encode(request.getPassword()))
-                .enabled(true) // can change after to implement email / phone verification
-                .locked(false)
-                .credentialsExpired(false)
-                .emailVerified(false)
-                .phoneVerified(false)
-                .build();
+        return User.builder()
+            .firstName(request.getFirstName())
+            .lastName(request.getLastName())
+            .email(request.getEmail())
+            .phoneNumber(request.getPhoneNumber())
+            .password(this.passwordEncoder.encode(request.getPassword()))
+            .enabled(true) // can change after to implement email / phone verification
+            .locked(false)
+            .credentialsExpired(false)
+            .emailVerified(false)
+            .phoneVerified(false)
+            .build();
     }
 }

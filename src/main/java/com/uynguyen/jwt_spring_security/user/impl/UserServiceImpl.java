@@ -10,6 +10,7 @@ import com.uynguyen.jwt_spring_security.user.request.ChangePasswordRequest;
 import com.uynguyen.jwt_spring_security.user.request.ProfileUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,15 +26,32 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     @Override
-    public UserDetails loadUserByUsername(final String userEmail) throws UsernameNotFoundException {
-        return this.userRepository.findByEmailIgnoreCase(userEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with user email : " + userEmail));
+    public UserDetails loadUserByUsername(final String userEmail)
+        throws UsernameNotFoundException {
+        return this.userRepository.findByEmailIgnoreCase(userEmail).orElseThrow(
+            () ->
+                new UsernameNotFoundException(
+                    "User not found with user email : " + userEmail
+                )
+        );
+
+        //        return this.userRepository.findByEmailIgnoreCase(userEmail)
+        //                .orElseThrow(new Supplier<UsernameNotFoundException>() {
+        //                    @Override
+        //                    public UsernameNotFoundException get() {
+        //                        return new UsernameNotFoundException("User not found with user email : " + userEmail);
+        //                    }
+        //                });
     }
 
     @Override
-    public void updateProfileInfo(final ProfileUpdateRequest request, final String userId) {
-        final User savedUser = this.userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId));
+    public void updateProfileInfo(
+        final ProfileUpdateRequest request,
+        final String userId
+    ) {
+        final User savedUser = this.userRepository.findById(userId).orElseThrow(
+            () -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId)
+        );
 
         this.userMapper.mergeUserInfo(savedUser, request);
         this.userRepository.save(savedUser);
@@ -45,22 +63,31 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.CHANGE_PASSWORD_MISMATCH);
         }
 
-        final User savedUser = this.userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId));
+        final User savedUser = this.userRepository.findById(userId).orElseThrow(
+            () -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId)
+        );
 
-        if (!this.passwordEncoder.matches(request.getOldPassword(),savedUser.getPassword())) {
+        if (
+            !this.passwordEncoder.matches(
+                request.getOldPassword(),
+                savedUser.getPassword()
+            )
+        ) {
             throw new BusinessException(ErrorCode.INVALID_OLD_PASSWORD);
         }
 
-        final String encodedPassword = this.passwordEncoder.encode(request.getNewPassword());
+        final String encodedPassword = this.passwordEncoder.encode(
+            request.getNewPassword()
+        );
         savedUser.setPassword(encodedPassword);
         this.userRepository.save(savedUser);
     }
 
     @Override
     public void deactivateAccount(String userId) {
-        final User user = this.userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId));
+        final User user = this.userRepository.findById(userId).orElseThrow(() ->
+            new BusinessException(ErrorCode.USER_NOT_FOUND, userId)
+        );
 
         if (!user.isEnabled()) {
             throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_DEACTIVATED);
@@ -71,9 +98,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void reactivateAccount(String userId) {
-        final User user = this.userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId));
+    public void reactivateAccount(@NonNull String userId) {
+        final User user = this.userRepository.findById(userId).orElseThrow(() ->
+            new BusinessException(ErrorCode.USER_NOT_FOUND, userId)
+        );
 
         if (user.isEnabled()) {
             throw new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED);
@@ -84,7 +112,5 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteAccount(String userId) {
-
-    }
+    public void deleteAccount(String userId) {}
 }
