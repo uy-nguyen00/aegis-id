@@ -15,6 +15,7 @@ import com.uynguyen.jwt_spring_security.exception.ErrorCode;
 import com.uynguyen.jwt_spring_security.user.User;
 import com.uynguyen.jwt_spring_security.user.UserMapper;
 import com.uynguyen.jwt_spring_security.user.UserRepository;
+import com.uynguyen.jwt_spring_security.user.request.ChangePasswordRequest;
 import com.uynguyen.jwt_spring_security.user.request.ProfileUpdateRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -244,6 +245,126 @@ public class UserServiceImplTest {
 
             assertThrows(NullPointerException.class, () ->
                 userService.updateProfileInfo(request, null)
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("changePassword Tests")
+    class changePasswordTests {
+
+        @Test
+        @DisplayName(
+            "Should change password successfully when inputs are valid"
+        )
+        void shouldChangePassword_WhenInputsAreValid() {
+            String userId = "user-123";
+            String oldPassword = "oldPassword";
+            String newPassword = "newPassword";
+            String encodedNewPassword = "encodedNewPassword";
+            String currentEncodedPassword = "currentEncodedPassword";
+
+            ChangePasswordRequest request = mock(ChangePasswordRequest.class);
+            when(request.getNewPassword()).thenReturn(newPassword);
+            when(request.getConfirmNewPassword()).thenReturn(newPassword);
+            when(request.getOldPassword()).thenReturn(oldPassword);
+
+            testUser.setPassword(currentEncodedPassword);
+
+            when(userRepository.findById(userId)).thenReturn(
+                Optional.of(testUser)
+            );
+            when(
+                passwordEncoder.matches(oldPassword, currentEncodedPassword)
+            ).thenReturn(true);
+            when(passwordEncoder.encode(newPassword)).thenReturn(
+                encodedNewPassword
+            );
+
+            userService.changePassword(request, userId);
+
+            assertEquals(encodedNewPassword, testUser.getPassword());
+            verify(userRepository).save(testUser);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when passwords do not match")
+        void shouldThrowException_WhenPasswordsDoNotMatch() {
+            String userId = "user-123";
+            ChangePasswordRequest request = mock(ChangePasswordRequest.class);
+            when(request.getNewPassword()).thenReturn("pass1");
+            when(request.getConfirmNewPassword()).thenReturn("pass2");
+
+            BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> userService.changePassword(request, userId)
+            );
+
+            assertEquals(
+                ErrorCode.CHANGE_PASSWORD_MISMATCH,
+                exception.getErrorCode()
+            );
+            verifyNoInteractions(userRepository);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user not found")
+        void shouldThrowException_WhenUserNotFound() {
+            String userId = "non-existent";
+            ChangePasswordRequest request = mock(ChangePasswordRequest.class);
+            when(request.getNewPassword()).thenReturn("pass");
+            when(request.getConfirmNewPassword()).thenReturn("pass");
+
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> userService.changePassword(request, userId)
+            );
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when old password is invalid")
+        void shouldThrowException_WhenOldPasswordIsInvalid() {
+            String userId = "user-123";
+            String oldPassword = "wrongPassword";
+            String currentEncodedPassword = "currentEncodedPassword";
+
+            ChangePasswordRequest request = mock(ChangePasswordRequest.class);
+            when(request.getNewPassword()).thenReturn("newPass");
+            when(request.getConfirmNewPassword()).thenReturn("newPass");
+            when(request.getOldPassword()).thenReturn(oldPassword);
+
+            testUser.setPassword(currentEncodedPassword);
+
+            when(userRepository.findById(userId)).thenReturn(
+                Optional.of(testUser)
+            );
+            when(
+                passwordEncoder.matches(oldPassword, currentEncodedPassword)
+            ).thenReturn(false);
+
+            BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> userService.changePassword(request, userId)
+            );
+
+            assertEquals(
+                ErrorCode.INVALID_OLD_PASSWORD,
+                exception.getErrorCode()
+            );
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw NullPointerException when userId is null")
+        void shouldThrowException_WhenUserIdIsNull() {
+            ChangePasswordRequest request = mock(ChangePasswordRequest.class);
+
+            assertThrows(NullPointerException.class, () ->
+                userService.changePassword(request, null)
             );
         }
     }
