@@ -1,6 +1,7 @@
 package com.uynguyen.jwt_spring_security.user.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -365,6 +366,76 @@ public class UserServiceImplTest {
 
             assertThrows(NullPointerException.class, () ->
                 userService.changePassword(request, null)
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("deactivateAccount Tests")
+    class deactivateAccountTests {
+
+        @Test
+        @DisplayName(
+            "Should deactivate account successfully when user exists and is enabled"
+        )
+        void shouldDeactivateAccount_WhenUserExistsAndEnabled() {
+            String userId = "user-123";
+            testUser.setEnabled(true);
+
+            when(userRepository.findById(userId)).thenReturn(
+                Optional.of(testUser)
+            );
+
+            userService.deactivateAccount(userId);
+
+            assertFalse(testUser.isEnabled());
+            verify(userRepository).save(testUser);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user not found")
+        void shouldThrowException_WhenUserNotFound() {
+            String userId = "non-existent";
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> userService.deactivateAccount(userId)
+            );
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName(
+            "Should throw exception when account is already deactivated"
+        )
+        void shouldThrowException_WhenAccountAlreadyDeactivated() {
+            String userId = "user-123";
+            testUser.setEnabled(false);
+
+            when(userRepository.findById(userId)).thenReturn(
+                Optional.of(testUser)
+            );
+
+            BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> userService.deactivateAccount(userId)
+            );
+
+            assertEquals(
+                ErrorCode.ACCOUNT_ALREADY_DEACTIVATED,
+                exception.getErrorCode()
+            );
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw NullPointerException when userId is null")
+        void shouldThrowException_WhenUserIdIsNull() {
+            assertThrows(NullPointerException.class, () ->
+                userService.deactivateAccount(null)
             );
         }
     }
