@@ -110,5 +110,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteAccount(String userId) {}
+    public void deleteAccount(String userId) {
+        final User user = this.userRepository.findById(userId).orElseThrow(() ->
+            new BusinessException(ErrorCode.USER_NOT_FOUND, userId)
+        );
+
+        this.userRepository.delete(user);
+    }
 }

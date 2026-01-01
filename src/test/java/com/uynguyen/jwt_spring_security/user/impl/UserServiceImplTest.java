@@ -508,4 +508,38 @@ public class UserServiceImplTest {
             );
         }
     }
+
+    @Nested
+    @DisplayName("deleteAccount Tests")
+    class deleteAccountTests {
+
+        @Test
+        @DisplayName("Should delete account successfully when user exists")
+        void shouldDeleteAccount_WhenUserExists() {
+            String userId = "user-123";
+
+            when(userRepository.findById(userId)).thenReturn(
+                Optional.of(testUser)
+            );
+
+            userService.deleteAccount(userId);
+
+            verify(userRepository).delete(testUser);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when user not found")
+        void shouldThrowException_WhenUserNotFound() {
+            String userId = "non-existent";
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> userService.deleteAccount(userId)
+            );
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+            verify(userRepository, never()).delete(any());
+        }
+    }
 }
