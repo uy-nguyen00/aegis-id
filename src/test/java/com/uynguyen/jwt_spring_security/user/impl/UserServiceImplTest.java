@@ -3,14 +3,19 @@ package com.uynguyen.jwt_spring_security.user.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.uynguyen.jwt_spring_security.exception.BusinessException;
+import com.uynguyen.jwt_spring_security.exception.ErrorCode;
 import com.uynguyen.jwt_spring_security.user.User;
 import com.uynguyen.jwt_spring_security.user.UserMapper;
 import com.uynguyen.jwt_spring_security.user.UserRepository;
 import com.uynguyen.jwt_spring_security.user.request.ProfileUpdateRequest;
-import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -196,15 +201,49 @@ public class UserServiceImplTest {
     @DisplayName("updateProfileInfo Tests")
     class updateProfileInfoTests {
 
-        private final ProfileUpdateRequest profileUpdateRequest =
-            ProfileUpdateRequest.builder()
-                .firstName("Updated John")
-                .lastName("Updated Doe")
-                .dateOfBirth();
+        @Test
+        @DisplayName("Should update profile successfully when user exists")
+        void shouldUpdateProfile_WhenUserExists() {
+            String userId = "user-123";
+            ProfileUpdateRequest request = mock(ProfileUpdateRequest.class);
 
-        void shouldUpdateProfileInfo_WithValidRequest_AndValidUserId() {
-            when(userRepository.findById(testUser.getId())).thenReturn(
+            when(userRepository.findById(userId)).thenReturn(
                 Optional.of(testUser)
+            );
+
+            userService.updateProfileInfo(request, userId);
+
+            verify(userRepository).findById(userId);
+            verify(userMapper).mergeUserInfo(testUser, request);
+            verify(userRepository).save(testUser);
+        }
+
+        @Test
+        @DisplayName("Should throw BusinessException when user not found")
+        void shouldThrowException_WhenUserNotFound() {
+            String userId = "non-existent-id";
+            ProfileUpdateRequest request = mock(ProfileUpdateRequest.class);
+
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> userService.updateProfileInfo(request, userId)
+            );
+
+            assertEquals(ErrorCode.USER_NOT_FOUND, exception.getErrorCode());
+            verify(userRepository).findById(userId);
+            verifyNoInteractions(userMapper);
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw NullPointerException when userId is null")
+        void shouldThrowException_WhenUserIdIsNull() {
+            ProfileUpdateRequest request = mock(ProfileUpdateRequest.class);
+
+            assertThrows(NullPointerException.class, () ->
+                userService.updateProfileInfo(request, null)
             );
         }
     }
