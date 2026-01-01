@@ -8,9 +8,10 @@ import com.uynguyen.jwt_spring_security.user.UserRepository;
 import com.uynguyen.jwt_spring_security.user.UserService;
 import com.uynguyen.jwt_spring_security.user.request.ChangePasswordRequest;
 import com.uynguyen.jwt_spring_security.user.request.ProfileUpdateRequest;
+import java.util.Objects;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,23 +35,17 @@ public class UserServiceImpl implements UserService {
                     "User not found with user email : " + userEmail
                 )
         );
-
-        //        return this.userRepository.findByEmailIgnoreCase(userEmail)
-        //                .orElseThrow(new Supplier<UsernameNotFoundException>() {
-        //                    @Override
-        //                    public UsernameNotFoundException get() {
-        //                        return new UsernameNotFoundException("User not found with user email : " + userEmail);
-        //                    }
-        //                });
     }
 
     @Override
     public void updateProfileInfo(
         final ProfileUpdateRequest request,
-        final String userId
+        @NonNull final String userId
     ) {
-        final User savedUser = this.userRepository.findById(userId).orElseThrow(
-            () -> new BusinessException(ErrorCode.USER_NOT_FOUND, userId)
+        final User savedUser = Objects.requireNonNull(
+            this.userRepository.findById(userId).orElseThrow(() ->
+                new BusinessException(ErrorCode.USER_NOT_FOUND, userId)
+            )
         );
 
         this.userMapper.mergeUserInfo(savedUser, request);
@@ -58,7 +53,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changePassword(ChangePasswordRequest request, String userId) {
+    public void changePassword(
+        ChangePasswordRequest request,
+        @NonNull String userId
+    ) {
         if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
             throw new BusinessException(ErrorCode.CHANGE_PASSWORD_MISMATCH);
         }
@@ -84,7 +82,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deactivateAccount(String userId) {
+    public void deactivateAccount(@NonNull String userId) {
         final User user = this.userRepository.findById(userId).orElseThrow(() ->
             new BusinessException(ErrorCode.USER_NOT_FOUND, userId)
         );
