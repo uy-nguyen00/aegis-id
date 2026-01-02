@@ -5,7 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import com.uynguyen.jwt_spring_security.auth.request.AuthenticationRequest;
 import com.uynguyen.jwt_spring_security.auth.request.RegistrationRequest;
+import com.uynguyen.jwt_spring_security.auth.response.AuthenticationResponse;
 import com.uynguyen.jwt_spring_security.exception.BusinessException;
 import com.uynguyen.jwt_spring_security.exception.ErrorCode;
 import com.uynguyen.jwt_spring_security.role.Role;
@@ -25,6 +27,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthenticationServiceImpl Unit Tests")
@@ -206,6 +211,78 @@ public class AuthenticationServiceImplTest {
             );
 
             verify(userRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("login Tests")
+    class loginTests {
+
+        @Test
+        @DisplayName("Should login successfully and return tokens")
+        void shouldLoginSuccessfully() {
+            // Given
+            AuthenticationRequest request = mock(AuthenticationRequest.class);
+            when(request.getEmail()).thenReturn("test@example.com");
+            when(request.getPassword()).thenReturn("password");
+
+            User user = new User();
+            user.setEmail("test@example.com");
+
+            Authentication authentication = mock(Authentication.class);
+            when(authentication.getPrincipal()).thenReturn(user);
+
+            when(
+                authenticationManager.authenticate(
+                    any(UsernamePasswordAuthenticationToken.class)
+                )
+            ).thenReturn(authentication);
+
+            when(jwtService.generateAccessToken(any())).thenReturn(
+                "access-token"
+            );
+            when(jwtService.generateRefreshToken(any())).thenReturn(
+                "refresh-token"
+            );
+
+            // When
+            AuthenticationResponse response = authenticationService.login(
+                request
+            );
+
+            // Then
+            assertNotNull(response);
+            assertEquals("access-token", response.getAccessToken());
+            assertEquals("refresh-token", response.getRefreshToken());
+            assertEquals("Bearer", response.getTokenType());
+
+            verify(authenticationManager).authenticate(
+                any(UsernamePasswordAuthenticationToken.class)
+            );
+            verify(jwtService).generateAccessToken(any());
+            verify(jwtService).generateRefreshToken(any());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when authentication fails")
+        void shouldThrowExceptionWhenAuthFails() {
+            // Given
+            AuthenticationRequest request = mock(AuthenticationRequest.class);
+            when(request.getEmail()).thenReturn("test@example.com");
+            when(request.getPassword()).thenReturn("wrong-password");
+
+            when(
+                authenticationManager.authenticate(
+                    any(UsernamePasswordAuthenticationToken.class)
+                )
+            ).thenThrow(new BadCredentialsException("Bad credentials"));
+
+            // When & Then
+            assertThrows(BadCredentialsException.class, () ->
+                authenticationService.login(request)
+            );
+
+            verify(jwtService, never()).generateAccessToken(anyString());
         }
     }
 }

@@ -38,7 +38,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional
     public void register(RegistrationRequest request) {
-        // TODO can add a little proxy here (might be over-engineered)
         checkUserEmail(request.getEmail());
         checkUserPhoneNumber(request.getPhoneNumber());
         checkPasswords(request.getPassword(), request.getConfirmPassword());
