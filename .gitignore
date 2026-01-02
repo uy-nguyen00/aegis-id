@@ -32,8 +32,7 @@ build/
 ### VS Code ###
 .vscode/
 
-.env
-
 ### Project files ###
+.env
 src/main/resources/keys/local-only/
 node_modules/
