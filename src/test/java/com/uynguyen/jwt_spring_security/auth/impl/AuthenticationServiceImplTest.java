@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import com.uynguyen.jwt_spring_security.auth.request.AuthenticationRequest;
+import com.uynguyen.jwt_spring_security.auth.request.RefreshTokenRequest;
 import com.uynguyen.jwt_spring_security.auth.request.RegistrationRequest;
 import com.uynguyen.jwt_spring_security.auth.response.AuthenticationResponse;
 import com.uynguyen.jwt_spring_security.exception.BusinessException;
@@ -283,6 +284,54 @@ public class AuthenticationServiceImplTest {
             );
 
             verify(jwtService, never()).generateAccessToken(anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("refreshToken Tests")
+    class refreshTokenTests {
+
+        @Test
+        @DisplayName("Should refresh token successfully")
+        void shouldRefreshTokenSuccessfully() {
+            // Given
+            RefreshTokenRequest request = mock(RefreshTokenRequest.class);
+            when(request.getRefreshToken()).thenReturn("valid-refresh-token");
+
+            when(
+                jwtService.refreshAccessToken("valid-refresh-token")
+            ).thenReturn("new-access-token");
+
+            // When
+            AuthenticationResponse response =
+                authenticationService.refreshToken(request);
+
+            // Then
+            assertNotNull(response);
+            assertEquals("new-access-token", response.getAccessToken());
+            assertEquals("valid-refresh-token", response.getRefreshToken());
+            assertEquals("Bearer", response.getTokenType());
+
+            verify(jwtService).refreshAccessToken("valid-refresh-token");
+        }
+
+        @Test
+        @DisplayName("Should propagate exception when token refresh fails")
+        void shouldPropagateExceptionWhenRefreshFails() {
+            // Given
+            RefreshTokenRequest request = mock(RefreshTokenRequest.class);
+            when(request.getRefreshToken()).thenReturn("invalid-token");
+
+            when(jwtService.refreshAccessToken("invalid-token")).thenThrow(
+                new RuntimeException("Invalid token")
+            );
+
+            // When & Then
+            assertThrows(RuntimeException.class, () ->
+                authenticationService.refreshToken(request)
+            );
+
+            verify(jwtService).refreshAccessToken("invalid-token");
         }
     }
 }
