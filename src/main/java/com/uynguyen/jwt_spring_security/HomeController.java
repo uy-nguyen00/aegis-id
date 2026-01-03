@@ -1,0 +1,20 @@
+package com.uynguyen.jwt_spring_security;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HomeController {
+
+    @GetMapping("/")
+    public String home(
+        @Value("${spring.application.name}") final String appName
+    ) {
+        return (
+            "Welcome to " +
+            appName +
+            "<br> <a href=\"/swagger-ui/index.html\">API Docs</a>"
+        );
+    }
+}

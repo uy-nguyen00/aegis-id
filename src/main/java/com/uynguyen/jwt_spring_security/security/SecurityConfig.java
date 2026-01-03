@@ -1,6 +1,9 @@
 package com.uynguyen.jwt_spring_security.security;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -17,32 +20,41 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_URLS = {
-        "/api/v1/auth/login",
-        "/api/v1/auth/register",
-        "/api/v1/auth/refresh",
-        "/v2/api-docs",
-        "/v3/api-docs",
-        "/v3/api-docs/**",
-        "/swagger-resources",
-        "/swagger-resources/**",
-        "/configuration/ui",
-        "/configuration/security",
-        "/swagger-ui/**",
-        "/webjars/**",
-        "/swagger-ui.html",
-    };
+    @Value("${spring.profiles.active}")
+    private String env;
+
+    private List<String> PUBLIC_URLS = new ArrayList<>(
+        List.of(
+            "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/refresh",
+            "/v2/api-docs",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-resources",
+            "/swagger-resources/**",
+            "/configuration/ui",
+            "/configuration/security",
+            "/swagger-ui/**",
+            "/webjars/**",
+            "/swagger-ui.html"
+        )
+    );
 
     private final JwtFilter jwtFilter;
 
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http)
         throws Exception {
+        if (env.indexOf("dev") >= 0) {
+            PUBLIC_URLS.add("/");
+        }
+
         return http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth ->
                 auth
-                    .requestMatchers(PUBLIC_URLS)
+                    .requestMatchers(PUBLIC_URLS.toArray(new String[0]))
                     .permitAll()
                     .anyRequest()
                     .authenticated()
