@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.uynguyen</groupId>
-	<artifactId>${project.artifact-id}</artifactId>
+	<artifactId>jwt-spring-security</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>${project.name}</name>
 	<description>${project.description}</description>
@@ -32,7 +32,6 @@
 		<openapi.version>2.8.14</openapi.version>
 		
 		<!-- Customizable project properties -->
-		<project.artifact-id>jwt-spring-security</project.artifact-id>
 		<project.name>jwt-spring-security</project.name>
 		<project.description>Spring Boot project implementing JWT asymmetric encryption</project.description>
 	</properties>
