@@ -7,10 +7,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HomeController {
 
+    @Value("${spring.application.name}")
+    private String appName;
+
     @GetMapping("/")
-    public String home(
-        @Value("${spring.application.name}") final String appName
-    ) {
+    public String home() {
         return (
             "Welcome to " +
             appName +
