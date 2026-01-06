@@ -37,7 +37,7 @@ openssl rsa -pubout -in private_key.pem -out public_key.pem
 Use Docker Compose to start the PostgreSQL database and pgAdmin:
 
 ```sh
-docker-compose up -d
+docker compose up -d
 ```
 
 - **PostgreSQL**: Port `5432`
