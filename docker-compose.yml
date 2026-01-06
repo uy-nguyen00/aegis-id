@@ -1,6 +1,6 @@
 services:
     postgres:
-        container_name: jwt_spring_security
+        container_name: jwt_spring_security_db
         image: postgres:17.5-alpine
         environment:
             POSTGRES_USER: postgres
