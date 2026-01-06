@@ -1,5 +1,7 @@
 # JWT Spring Security
 
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+
 This project implements JWT-based authentication using Spring Security, Spring Boot 4 and Java 25.
 
 ## Prerequisites
