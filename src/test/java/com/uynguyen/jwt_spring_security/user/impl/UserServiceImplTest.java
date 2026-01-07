@@ -62,7 +62,7 @@ public class UserServiceImplTest {
 
     @Nested
     @DisplayName("loadUserByUsername Tests")
-    class loadUserByUsernameTests {
+    class LoadUserByUsernameTests {
 
         @Test
         @DisplayName("Should load user with valid username")
@@ -202,7 +202,7 @@ public class UserServiceImplTest {
 
     @Nested
     @DisplayName("updateProfileInfo Tests")
-    class updateProfileInfoTests {
+    class UpdateProfileInfoTests {
 
         @Test
         @DisplayName("Should update profile successfully when user exists")
@@ -253,7 +253,7 @@ public class UserServiceImplTest {
 
     @Nested
     @DisplayName("changePassword Tests")
-    class changePasswordTests {
+    class ChangePasswordTests {
 
         @Test
         @DisplayName(
@@ -373,7 +373,7 @@ public class UserServiceImplTest {
 
     @Nested
     @DisplayName("deactivateAccount Tests")
-    class deactivateAccountTests {
+    class DeactivateAccountTests {
 
         @Test
         @DisplayName(
@@ -443,7 +443,7 @@ public class UserServiceImplTest {
 
     @Nested
     @DisplayName("reactivateAccount Tests")
-    class reactivateAccountTests {
+    class ReactivateAccountTests {
 
         @Test
         @DisplayName(
@@ -511,7 +511,7 @@ public class UserServiceImplTest {
 
     @Nested
     @DisplayName("deleteAccount Tests")
-    class deleteAccountTests {
+    class DeleteAccountTests {
 
         @Test
         @DisplayName("Should delete account successfully when user exists")

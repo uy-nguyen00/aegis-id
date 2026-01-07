@@ -59,7 +59,7 @@ public class AuthenticationServiceImplTest {
 
     @Nested
     @DisplayName("register Tests")
-    class registerTests {
+    class RegisterTests {
 
         @Test
         @DisplayName("Should register user successfully when all checks pass")
@@ -217,7 +217,7 @@ public class AuthenticationServiceImplTest {
 
     @Nested
     @DisplayName("login Tests")
-    class loginTests {
+    class LoginTests {
 
         @Test
         @DisplayName("Should login successfully and return tokens")
@@ -289,7 +289,7 @@ public class AuthenticationServiceImplTest {
 
     @Nested
     @DisplayName("refreshToken Tests")
-    class refreshTokenTests {
+    class RefreshTokenTests {
 
         @Test
         @DisplayName("Should refresh token successfully")
