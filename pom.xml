@@ -30,6 +30,7 @@
 		<java.version>25</java.version>
 		<jjwt.version>0.12.6</jjwt.version>
 		<openapi.version>2.8.14</openapi.version>
+		<argLine/>
 		
 		<!-- Customizable project properties -->
 		<project.name>jwt-spring-security</project.name>
@@ -154,6 +155,24 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
 				</configuration>
 			</plugin>
 		</plugins>
