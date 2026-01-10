@@ -76,6 +76,8 @@ public class ApplicationExceptionHandler {
             });
 
         final ErrorResponse errorResponse = ErrorResponse.builder()
+            .message(VALIDATION_ERROR.getDefaultMessage())
+            .code(VALIDATION_ERROR.getCode())
             .validationErrorList(errors)
             .build();
 
@@ -86,8 +88,6 @@ public class ApplicationExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(
         final BadCredentialsException exception
     ) {
-        log.debug(exception.getMessage(), exception);
-
         final ErrorResponse response = ErrorResponse.builder()
             .message(BAD_CREDENTIALS.getDefaultMessage())
             .code(BAD_CREDENTIALS.getCode())
@@ -114,8 +114,6 @@ public class ApplicationExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(
         final UsernameNotFoundException exception
     ) {
-        log.debug(exception.getMessage(), exception);
-
         final ErrorResponse response = ErrorResponse.builder()
             .code(USERNAME_NOT_FOUND.getCode())
             .message(USERNAME_NOT_FOUND.getDefaultMessage())
@@ -128,8 +126,6 @@ public class ApplicationExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(
         final AuthorizationDeniedException exception
     ) {
-        log.debug(exception.getMessage(), exception);
-
         final ErrorResponse response = ErrorResponse.builder()
             .message("You are not authorized to perform this operation")
             .build();

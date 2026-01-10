@@ -66,6 +66,8 @@ public enum ErrorCode {
 
     USERNAME_NOT_FOUND("USERNAME_NOT_FOUND", "Username not found", NOT_FOUND),
 
+    VALIDATION_ERROR("VALIDATION_ERROR", "Parameters are invalid", BAD_REQUEST),
+
     INTERNAL_SERVER_ERROR(
         "INTERNAL_SERVER_ERROR",
         "Internal Server Error",
