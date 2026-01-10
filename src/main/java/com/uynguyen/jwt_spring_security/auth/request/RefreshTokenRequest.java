@@ -1,5 +1,6 @@
 package com.uynguyen.jwt_spring_security.auth.request;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Getter
@@ -9,5 +10,6 @@ import lombok.*;
 @Builder
 public class RefreshTokenRequest {
 
+    @NotBlank(message = "VALIDATION.REFRESH_TOKEN.NOT_BLANK")
     private String refreshToken;
 }
