@@ -6,8 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.uynguyen.jwt_spring_security.auth.request.AuthenticationRequest;
+import com.uynguyen.jwt_spring_security.auth.request.RefreshTokenRequest;
 import com.uynguyen.jwt_spring_security.auth.request.RegistrationRequest;
 import com.uynguyen.jwt_spring_security.auth.response.AuthenticationResponse;
+import com.uynguyen.jwt_spring_security.exception.BusinessException;
+import com.uynguyen.jwt_spring_security.exception.ErrorCode;
 import com.uynguyen.jwt_spring_security.handler.ErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -239,6 +242,105 @@ public class AuthenticationControllerTest {
                 .expectBody(ErrorResponse.class)
                 .value(response ->
                     assertEquals("VALIDATION_ERROR", response.getCode())
+                );
+        }
+    }
+
+    @Nested
+    @DisplayName("/refresh Tests")
+    class RefreshEndpointTests {
+
+        @Test
+        @DisplayName("Should return tokens when refresh token is valid")
+        void shouldReturnToken_WhenRefreshTokenIsValid() {
+            RefreshTokenRequest request = RefreshTokenRequest.builder()
+                .refreshToken("valid-refresh-token")
+                .build();
+            AuthenticationResponse expectedResponse =
+                AuthenticationResponse.builder()
+                    .accessToken("new-access-token")
+                    .refreshToken("new-refresh-token")
+                    .tokenType("Bearer")
+                    .build();
+
+            when(
+                authenticationService.refreshToken(
+                    any(RefreshTokenRequest.class)
+                )
+            ).thenReturn(expectedResponse);
+
+            restTestClient
+                .post()
+                .uri("/api/v1/auth/refresh")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody(AuthenticationResponse.class)
+                .value(response -> {
+                    assertNotNull(response);
+                    assertEquals(
+                        "new-access-token",
+                        expectedResponse.getAccessToken()
+                    );
+                    assertEquals(
+                        "new-refresh-token",
+                        expectedResponse.getRefreshToken()
+                    );
+                    assertEquals("Bearer", expectedResponse.getTokenType());
+                });
+        }
+
+        @Test
+        @DisplayName(
+            "Should return 400 Bad Request when refresh token is blank"
+        )
+        void shouldReturnBadRequest_WhenRefreshTokenIsBlank() {
+            RefreshTokenRequest request = RefreshTokenRequest.builder()
+                .refreshToken("")
+                .build();
+
+            restTestClient
+                .post()
+                .uri("/api/v1/auth/refresh")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals("VALIDATION_ERROR", response.getCode())
+                );
+        }
+
+        @Test
+        @DisplayName(
+            "Should return 400 Bad Request when refresh token is invalid"
+        )
+        void shouldReturnBadRequest_WhenRefreshTokenIsInvalid() {
+            RefreshTokenRequest request = RefreshTokenRequest.builder()
+                .refreshToken("invalid-token")
+                .build();
+
+            when(
+                authenticationService.refreshToken(
+                    any(RefreshTokenRequest.class)
+                )
+            ).thenThrow(new BusinessException(ErrorCode.INVALID_JWT_TOKEN));
+
+            restTestClient
+                .post()
+                .uri("/api/v1/auth/refresh")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals(
+                        ErrorCode.INVALID_JWT_TOKEN.getCode(),
+                        response.getCode()
+                    )
                 );
         }
     }
