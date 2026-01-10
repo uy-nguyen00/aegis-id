@@ -3,10 +3,13 @@ package com.uynguyen.jwt_spring_security.auth;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.uynguyen.jwt_spring_security.auth.request.AuthenticationRequest;
+import com.uynguyen.jwt_spring_security.auth.request.RegistrationRequest;
 import com.uynguyen.jwt_spring_security.auth.response.AuthenticationResponse;
+import com.uynguyen.jwt_spring_security.handler.ErrorResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -135,6 +138,109 @@ public class AuthenticationControllerTest {
                 .exchange()
                 .expectStatus()
                 .isBadRequest();
+        }
+    }
+
+    @Nested
+    @DisplayName("/register Tests")
+    class RegisterEndpointTests {
+
+        @Test
+        @DisplayName("Should create user with valid request")
+        void shouldCreateUser_WithValidRequest() {
+            RegistrationRequest request = RegistrationRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .phoneNumber("+1234567890")
+                .password("Password123!")
+                .confirmPassword("Password123!")
+                .build();
+
+            restTestClient
+                .post()
+                .uri("/api/v1/auth/register")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isCreated();
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request when email is invalid")
+        void shouldReturnBadRequest_WhenEmailIsInvalid() {
+            RegistrationRequest request = RegistrationRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("invalid-email")
+                .phoneNumber("+1234567890")
+                .password("Password123!")
+                .confirmPassword("Password123!")
+                .build();
+
+            restTestClient
+                .post()
+                .uri("/api/v1/auth/register")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals("VALIDATION_ERROR", response.getCode())
+                );
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request when password is too short")
+        void shouldReturnBadRequest_WhenPasswordIsTooShort() {
+            RegistrationRequest request = RegistrationRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .phoneNumber("+1234567890")
+                .password("12")
+                .confirmPassword("Password123!")
+                .build();
+
+            restTestClient
+                .post()
+                .uri("/api/v1/auth/register")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals("VALIDATION_ERROR", response.getCode())
+                );
+        }
+
+        @Test
+        @DisplayName(
+            "Should return 400 Bad Request when passwords do not match"
+        )
+        void shouldReturnBadRequest_WhenPasswordsDoNotMatch() {
+            RegistrationRequest request = RegistrationRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .phoneNumber("+1234567890")
+                .password("Password123_")
+                .confirmPassword("Password123!")
+                .build();
+
+            restTestClient
+                .post()
+                .uri("/api/v1/auth/register")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals("VALIDATION_ERROR", response.getCode())
+                );
         }
     }
 }
