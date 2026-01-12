@@ -36,6 +36,8 @@ public class AuthenticationControllerTest {
     @MockitoBean
     private AuthenticationService authenticationService;
 
+    private final String apiPrefix = "/api/v1/auth/";
+
     @BeforeEach
     void setUp() {}
 
@@ -63,7 +65,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/login")
+                .uri(apiPrefix + "login")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -99,7 +101,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/login")
+                .uri(apiPrefix + "login")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -118,7 +120,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/login")
+                .uri(apiPrefix + "login")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -135,7 +137,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/login")
+                .uri(apiPrefix + "login")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -161,7 +163,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/register")
+                .uri(apiPrefix + "register")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -182,7 +184,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/register")
+                .uri(apiPrefix + "register")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -207,7 +209,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/register")
+                .uri(apiPrefix + "register")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -234,7 +236,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/register")
+                .uri(apiPrefix + "register")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -271,7 +273,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/refresh")
+                .uri(apiPrefix + "refresh")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -302,7 +304,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/refresh")
+                .uri(apiPrefix + "refresh")
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -330,7 +332,7 @@ public class AuthenticationControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/auth/refresh")
+                .uri(apiPrefix + "refresh")
                 .body(request)
                 .exchange()
                 .expectStatus()
