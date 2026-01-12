@@ -39,6 +39,8 @@ public class UserControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
+    private final String apiPrefix = "/api/v1/users/";
+
     @Nested
     @DisplayName("Update Profile Info Tests")
     class UpdateProfileInfoTests {
@@ -64,7 +66,7 @@ public class UserControllerTest {
 
             restTestClient
                 .patch()
-                .uri("/api/v1/users/me")
+                .uri(apiPrefix + "me")
                 .header("Authorization", "Bearer " + token)
                 .body(request)
                 .exchange()
@@ -102,7 +104,7 @@ public class UserControllerTest {
 
             restTestClient
                 .patch()
-                .uri("/api/v1/users/me")
+                .uri(apiPrefix + "me")
                 .header("Authorization", "Bearer " + token)
                 .body(request)
                 .exchange()
@@ -140,7 +142,7 @@ public class UserControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/users/me/password")
+                .uri(apiPrefix + "me/password")
                 .header("Authorization", "Bearer " + token)
                 .body(request)
                 .exchange()
@@ -183,7 +185,7 @@ public class UserControllerTest {
 
             restTestClient
                 .post()
-                .uri("/api/v1/users/me/password")
+                .uri(apiPrefix + "me/password")
                 .header("Authorization", "Bearer " + token)
                 .body(request)
                 .exchange()
