@@ -3,11 +3,15 @@ package com.uynguyen.jwt_spring_security.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.uynguyen.jwt_spring_security.exception.BusinessException;
+import com.uynguyen.jwt_spring_security.exception.ErrorCode;
 import com.uynguyen.jwt_spring_security.handler.ErrorResponse;
 import com.uynguyen.jwt_spring_security.security.JwtService;
+import com.uynguyen.jwt_spring_security.user.request.ChangePasswordRequest;
 import com.uynguyen.jwt_spring_security.user.request.ProfileUpdateRequest;
 import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
@@ -107,6 +111,90 @@ public class UserControllerTest {
                 .expectBody(ErrorResponse.class)
                 .value(response ->
                     assertEquals("VALIDATION_ERROR", response.getCode())
+                );
+        }
+    }
+
+    @Nested
+    @DisplayName("Change Password Tests")
+    class ChangePasswordTests {
+
+        @Test
+        @DisplayName("Should change password successfully")
+        void shouldChangePassword_WhenRequestIsValid() {
+            String token = "valid-token";
+            String username = "user@example.com";
+            User user = User.builder().id("user-id").email(username).build();
+
+            ChangePasswordRequest request = ChangePasswordRequest.builder()
+                .oldPassword("oldPass")
+                .newPassword("newPass")
+                .confirmNewPassword("newPass")
+                .build();
+
+            when(jwtService.extractUsernameFromToken(token)).thenReturn(
+                username
+            );
+            when(jwtService.isTokenValid(token, username)).thenReturn(true);
+            when(userService.loadUserByUsername(username)).thenReturn(user);
+
+            restTestClient
+                .post()
+                .uri("/api/v1/users/me/password")
+                .header("Authorization", "Bearer " + token)
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+            verify(userService).changePassword(
+                any(ChangePasswordRequest.class),
+                eq("user-id")
+            );
+        }
+
+        @Test
+        @DisplayName(
+            "Should return 400 Bad Request when passwords do not match"
+        )
+        void shouldReturnBadRequest_WhenPasswordsDoNotMatch() {
+            String token = "valid-token";
+            String username = "user@example.com";
+            User user = User.builder().id("user-id").email(username).build();
+
+            ChangePasswordRequest request = ChangePasswordRequest.builder()
+                .oldPassword("oldPass")
+                .newPassword("newPass")
+                .confirmNewPassword("mismatch")
+                .build();
+
+            when(jwtService.extractUsernameFromToken(token)).thenReturn(
+                username
+            );
+            when(jwtService.isTokenValid(token, username)).thenReturn(true);
+            when(userService.loadUserByUsername(username)).thenReturn(user);
+
+            doThrow(new BusinessException(ErrorCode.CHANGE_PASSWORD_MISMATCH))
+                .when(userService)
+                .changePassword(
+                    any(ChangePasswordRequest.class),
+                    eq("user-id")
+                );
+
+            restTestClient
+                .post()
+                .uri("/api/v1/users/me/password")
+                .header("Authorization", "Bearer " + token)
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals(
+                        ErrorCode.CHANGE_PASSWORD_MISMATCH.getCode(),
+                        response.getCode()
+                    )
                 );
         }
     }
