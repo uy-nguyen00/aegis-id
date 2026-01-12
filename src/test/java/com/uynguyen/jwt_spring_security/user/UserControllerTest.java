@@ -14,6 +14,7 @@ import com.uynguyen.jwt_spring_security.security.JwtService;
 import com.uynguyen.jwt_spring_security.user.request.ChangePasswordRequest;
 import com.uynguyen.jwt_spring_security.user.request.ProfileUpdateRequest;
 import java.time.LocalDate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,60 @@ public class UserControllerTest {
     private JwtService jwtService;
 
     private final String apiPrefix = "/api/v1/users/";
+    private final String token = "valid-token";
+    private final String username = "user@example.com";
+    private User user;
+
+    @BeforeEach
+    void setUp() {
+        this.user = User.builder().id("user-id").email(username).build();
+
+        when(this.jwtService.extractUsernameFromToken(token)).thenReturn(
+            username
+        );
+        when(this.jwtService.isTokenValid(token, username)).thenReturn(true);
+        when(this.userService.loadUserByUsername(username)).thenReturn(
+            this.user
+        );
+    }
+
+    @Test
+    @DisplayName("Should return 403 Forbidden when token is invalid")
+    void shouldReturnForbidden_WhenTokenIsInvalid() {
+        String invalidToken = "invalid-token";
+        ProfileUpdateRequest request = ProfileUpdateRequest.builder()
+            .firstName("John")
+            .lastName("Doe")
+            .dateOfBirth(LocalDate.of(1990, 1, 1))
+            .build();
+
+        restTestClient
+            .patch()
+            .uri(apiPrefix + "me")
+            .header("Authorization", "Bearer " + invalidToken)
+            .body(request)
+            .exchange()
+            .expectStatus()
+            .isForbidden();
+    }
+
+    @Test
+    @DisplayName("Should return 403 Forbidden when no token is provided")
+    void shouldReturnForbidden_WhenNoTokenIsProvided() {
+        ProfileUpdateRequest request = ProfileUpdateRequest.builder()
+            .firstName("John")
+            .lastName("Doe")
+            .dateOfBirth(LocalDate.of(1990, 1, 1))
+            .build();
+
+        restTestClient
+            .patch()
+            .uri(apiPrefix + "me")
+            .body(request)
+            .exchange()
+            .expectStatus()
+            .isForbidden();
+    }
 
     @Nested
     @DisplayName("Update Profile Info Tests")
@@ -48,21 +103,11 @@ public class UserControllerTest {
         @Test
         @DisplayName("Should retrieve user profile successfully")
         void shouldUpdateProfile_WhenRequestIsValid() {
-            String token = "valid-token";
-            String username = "user@example.com";
-            User user = User.builder().id("user-id").email(username).build();
-
             ProfileUpdateRequest request = ProfileUpdateRequest.builder()
                 .firstName("John")
                 .lastName("Doe")
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .build();
-
-            when(jwtService.extractUsernameFromToken(token)).thenReturn(
-                username
-            );
-            when(jwtService.isTokenValid(token, username)).thenReturn(true);
-            when(userService.loadUserByUsername(username)).thenReturn(user);
 
             restTestClient
                 .patch()
@@ -84,23 +129,11 @@ public class UserControllerTest {
             "Should return 400 Bad Request when request body is invalid"
         )
         void shouldReturnBadRequest_WhenRequestBodyIsInvalid() {
-            String token = "valid-token";
-            String username = "user@example.com";
-            User user = new User();
-            user.setId("user-id");
-            user.setEmail(username);
-
             ProfileUpdateRequest request = ProfileUpdateRequest.builder()
                 .firstName("") // Invalid: empty
                 .lastName("Doe")
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .build();
-
-            when(jwtService.extractUsernameFromToken(token)).thenReturn(
-                username
-            );
-            when(jwtService.isTokenValid(token, username)).thenReturn(true);
-            when(userService.loadUserByUsername(username)).thenReturn(user);
 
             restTestClient
                 .patch()
@@ -124,21 +157,11 @@ public class UserControllerTest {
         @Test
         @DisplayName("Should change password successfully")
         void shouldChangePassword_WhenRequestIsValid() {
-            String token = "valid-token";
-            String username = "user@example.com";
-            User user = User.builder().id("user-id").email(username).build();
-
             ChangePasswordRequest request = ChangePasswordRequest.builder()
                 .oldPassword("oldPass")
                 .newPassword("newPass")
                 .confirmNewPassword("newPass")
                 .build();
-
-            when(jwtService.extractUsernameFromToken(token)).thenReturn(
-                username
-            );
-            when(jwtService.isTokenValid(token, username)).thenReturn(true);
-            when(userService.loadUserByUsername(username)).thenReturn(user);
 
             restTestClient
                 .post()
@@ -160,21 +183,11 @@ public class UserControllerTest {
             "Should return 400 Bad Request when passwords do not match"
         )
         void shouldReturnBadRequest_WhenPasswordsDoNotMatch() {
-            String token = "valid-token";
-            String username = "user@example.com";
-            User user = User.builder().id("user-id").email(username).build();
-
             ChangePasswordRequest request = ChangePasswordRequest.builder()
                 .oldPassword("oldPass")
                 .newPassword("newPass")
                 .confirmNewPassword("mismatch")
                 .build();
-
-            when(jwtService.extractUsernameFromToken(token)).thenReturn(
-                username
-            );
-            when(jwtService.isTokenValid(token, username)).thenReturn(true);
-            when(userService.loadUserByUsername(username)).thenReturn(user);
 
             doThrow(new BusinessException(ErrorCode.CHANGE_PASSWORD_MISMATCH))
                 .when(userService)
