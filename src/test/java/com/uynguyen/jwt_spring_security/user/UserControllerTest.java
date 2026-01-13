@@ -303,4 +303,48 @@ public class UserControllerTest {
                 );
         }
     }
+
+    @Nested
+    @DisplayName("Delete Account Tests")
+    class DeleteAccountTests {
+
+        @Test
+        @DisplayName("Should delete account successfully")
+        void shouldDeleteAccount_WhenRequestIsValid() {
+            restTestClient
+                .delete()
+                .uri(apiPrefix + "me")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+            verify(userService).deleteAccount(eq("user-id"));
+        }
+
+        @Test
+        @DisplayName(
+            "Should return 400 Bad Request when account is already activated"
+        )
+        void shouldReturnBadRequest_WhenAccountAlreadyActivated() {
+            doThrow(new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED))
+                .when(userService)
+                .deleteAccount(eq("user-id"));
+
+            restTestClient
+                .delete()
+                .uri(apiPrefix + "me")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals(
+                        ErrorCode.ACCOUNT_ALREADY_ACTIVATED.getCode(),
+                        response.getCode()
+                    )
+                );
+        }
+    }
 }
