@@ -259,4 +259,48 @@ public class UserControllerTest {
                 );
         }
     }
+
+    @Nested
+    @DisplayName("Reactivate Account Tests")
+    class ReactivateAccountTests {
+
+        @Test
+        @DisplayName("Should reactivate account successfully")
+        void shouldReactivateAccount_WhenRequestIsValid() {
+            restTestClient
+                .patch()
+                .uri(apiPrefix + "me/reactivate")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+            verify(userService).reactivateAccount(eq("user-id"));
+        }
+
+        @Test
+        @DisplayName(
+            "Should return 400 Bad Request when account is already activated"
+        )
+        void shouldReturnBadRequest_WhenAccountAlreadyActivated() {
+            doThrow(new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED))
+                .when(userService)
+                .reactivateAccount(eq("user-id"));
+
+            restTestClient
+                .patch()
+                .uri(apiPrefix + "me/reactivate")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals(
+                        ErrorCode.ACCOUNT_ALREADY_ACTIVATED.getCode(),
+                        response.getCode()
+                    )
+                );
+        }
+    }
 }
