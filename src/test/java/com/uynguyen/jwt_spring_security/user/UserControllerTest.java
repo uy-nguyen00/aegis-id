@@ -213,4 +213,50 @@ public class UserControllerTest {
                 );
         }
     }
+
+    @Nested
+    @DisplayName("Deactivate Account Tests")
+    class DeactivateAccountTests {
+
+        @Test
+        @DisplayName("Should deactivate account successfully")
+        void shouldDeactivateAccount_WhenRequestIsValid() {
+            restTestClient
+                .patch()
+                .uri(apiPrefix + "me/deactivate")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+            verify(userService).deactivateAccount(eq("user-id"));
+        }
+
+        @Test
+        @DisplayName(
+            "Should return 400 Bad Request when account is already deactivated"
+        )
+        void shouldReturnBadRequest_WhenAccountAlreadyDeactivated() {
+            doThrow(
+                new BusinessException(ErrorCode.ACCOUNT_ALREADY_DEACTIVATED)
+            )
+                .when(userService)
+                .deactivateAccount(eq("user-id"));
+
+            restTestClient
+                .patch()
+                .uri(apiPrefix + "me/deactivate")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals(
+                        ErrorCode.ACCOUNT_ALREADY_DEACTIVATED.getCode(),
+                        response.getCode()
+                    )
+                );
+        }
+    }
 }
