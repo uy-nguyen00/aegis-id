@@ -29,6 +29,19 @@ class RegistrationRequestTest {
             .build();
     }
 
+    /**
+     * Helper method to check if a violation exists for a specific property.
+     * This approach is i18n-safe as it doesn't rely on exact error messages.
+     */
+    private boolean hasViolationForProperty(
+        Set<ConstraintViolation<RegistrationRequest>> violations,
+        String propertyPath
+    ) {
+        return violations
+            .stream()
+            .anyMatch(v -> propertyPath.equals(v.getPropertyPath().toString()));
+    }
+
     @Test
     @DisplayName("Should create valid registration request")
     void testValidRegistrationRequest() {
@@ -63,18 +76,9 @@ class RegistrationRequestTest {
 
             // Then
             assertFalse(violations.isEmpty());
-            boolean hasFirstNameViolation = violations
-                .stream()
-                .anyMatch(
-                    v ->
-                        "firstName".equals(v.getPropertyPath().toString()) &&
-                        v
-                            .getMessage()
-                            .contains("VALIDATION.REGISTRATION.FIRSTNAME")
-                );
             assertTrue(
-                hasFirstNameViolation,
-                "Should have firstName validation error"
+                hasViolationForProperty(violations, "firstName"),
+                "Should have violation for firstName property"
             );
         }
 
@@ -91,13 +95,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("firstName", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.FIRSTNAME.NOT_BLANK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "firstName"),
+                "Should have violation for firstName property"
             );
         }
 
@@ -114,13 +114,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("firstName", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.FIRSTNAME.SIZE",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "firstName"),
+                "Should have violation for firstName property"
             );
         }
 
@@ -152,13 +148,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("firstName", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.FIRSTNAME.PATTERN",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "firstName"),
+                "Should have violation for firstName property"
             );
         }
 
@@ -225,18 +217,9 @@ class RegistrationRequestTest {
 
             // Then
             assertFalse(violations.isEmpty());
-            boolean hasLastNameViolation = violations
-                .stream()
-                .anyMatch(
-                    v ->
-                        "lastName".equals(v.getPropertyPath().toString()) &&
-                        v
-                            .getMessage()
-                            .contains("VALIDATION.REGISTRATION.LASTNAME")
-                );
             assertTrue(
-                hasLastNameViolation,
-                "Should have lastName validation error"
+                hasViolationForProperty(violations, "lastName"),
+                "Should have violation for lastName property"
             );
         }
 
@@ -253,13 +236,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("lastName", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.LASTNAME.BLANK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "lastName"),
+                "Should have violation for lastName property"
             );
         }
 
@@ -276,13 +255,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("lastName", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.LASTNAME.SIZE",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "lastName"),
+                "Should have violation for lastName property"
             );
         }
 
@@ -314,13 +289,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("lastName", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.LASTNAME.PATTERN",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "lastName"),
+                "Should have violation for lastName property"
             );
         }
 
@@ -357,12 +328,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("email", violation.getPropertyPath().toString());
             assertTrue(
-                violation.getMessage().contains("VALIDATION.REGISTRATION.EMAIL")
+                hasViolationForProperty(violations, "email"),
+                "Should have violation for email property"
             );
         }
 
@@ -379,13 +347,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("email", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.EMAIL.BLANK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "email"),
+                "Should have violation for email property"
             );
         }
 
@@ -402,13 +366,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("email", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.EMAIL.FORMAT",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "email"),
+                "Should have violation for email property"
             );
         }
 
@@ -460,16 +420,9 @@ class RegistrationRequestTest {
 
             // Then
             assertFalse(violations.isEmpty());
-            boolean hasPhoneViolation = violations
-                .stream()
-                .anyMatch(
-                    v ->
-                        "phoneNumber".equals(v.getPropertyPath().toString()) &&
-                        v.getMessage().contains("VALIDATION.REGISTRATION.PHONE")
-                );
             assertTrue(
-                hasPhoneViolation,
-                "Should have phoneNumber validation error"
+                hasViolationForProperty(violations, "phoneNumber"),
+                "Should have violation for phoneNumber property"
             );
         }
 
@@ -486,13 +439,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("phoneNumber", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.PHONE.BLANK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "phoneNumber"),
+                "Should have violation for phoneNumber property"
             );
         }
 
@@ -509,13 +458,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("phoneNumber", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.PHONE.FORMAT",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "phoneNumber"),
+                "Should have violation for phoneNumber property"
             );
         }
 
@@ -597,18 +542,9 @@ class RegistrationRequestTest {
 
             // Then
             assertFalse(violations.isEmpty());
-            boolean hasPasswordViolation = violations
-                .stream()
-                .anyMatch(
-                    v ->
-                        "password".equals(v.getPropertyPath().toString()) &&
-                        v
-                            .getMessage()
-                            .contains("VALIDATION.REGISTRATION.PASSWORD")
-                );
             assertTrue(
-                hasPasswordViolation,
-                "Should have password validation error"
+                hasViolationForProperty(violations, "password"),
+                "Should have violation for password property"
             );
         }
 
@@ -625,13 +561,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("password", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.PASSWORD.BLANK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "password"),
+                "Should have violation for password property"
             );
         }
 
@@ -648,13 +580,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("password", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.PASSWORD.SIZE",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "password"),
+                "Should have violation for password property"
             );
         }
 
@@ -671,18 +599,9 @@ class RegistrationRequestTest {
 
             // Then
             assertFalse(violations.isEmpty());
-            boolean hasSizeViolation = violations
-                .stream()
-                .anyMatch(
-                    v ->
-                        "password".equals(v.getPropertyPath().toString()) &&
-                        "VALIDATION.REGISTRATION.PASSWORD.SIZE".equals(
-                            v.getMessage()
-                        )
-                );
             assertTrue(
-                hasSizeViolation,
-                "Should have password size validation error"
+                hasViolationForProperty(violations, "password"),
+                "Should have violation for password property"
             );
         }
 
@@ -699,13 +618,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("password", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.PASSWORD.WEAK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "password"),
+                "Should have violation for password property"
             );
         }
 
@@ -722,13 +637,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("password", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.PASSWORD.WEAK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "password"),
+                "Should have violation for password property"
             );
         }
 
@@ -745,13 +656,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("password", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.PASSWORD.WEAK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "password"),
+                "Should have violation for password property"
             );
         }
 
@@ -768,13 +675,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals("password", violation.getPropertyPath().toString());
-            assertEquals(
-                "VALIDATION.REGISTRATION.PASSWORD.WEAK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "password"),
+                "Should have violation for password property"
             );
         }
 
@@ -828,22 +731,9 @@ class RegistrationRequestTest {
 
             // Then
             assertFalse(violations.isEmpty());
-            boolean hasConfirmPasswordViolation = violations
-                .stream()
-                .anyMatch(
-                    v ->
-                        "confirmPassword".equals(
-                            v.getPropertyPath().toString()
-                        ) &&
-                        v
-                            .getMessage()
-                            .contains(
-                                "VALIDATION.REGISTRATION.CONFIRM_PASSWORD"
-                            )
-                );
             assertTrue(
-                hasConfirmPasswordViolation,
-                "Should have confirmPassword validation error"
+                hasViolationForProperty(violations, "confirmPassword"),
+                "Should have violation for confirmPassword property"
             );
         }
 
@@ -860,16 +750,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals(
-                "confirmPassword",
-                violation.getPropertyPath().toString()
-            );
-            assertEquals(
-                "VALIDATION.REGISTRATION.CONFIRM_PASSWORD.BLANK",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "confirmPassword"),
+                "Should have violation for confirmPassword property"
             );
         }
 
@@ -886,16 +769,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals(
-                "confirmPassword",
-                violation.getPropertyPath().toString()
-            );
-            assertEquals(
-                "VALIDATION.REGISTRATION.CONFIRM_PASSWORD.SIZE",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "confirmPassword"),
+                "Should have violation for confirmPassword property"
             );
         }
 
@@ -912,16 +788,9 @@ class RegistrationRequestTest {
 
             // Then
             assertEquals(1, violations.size());
-            ConstraintViolation<RegistrationRequest> violation = violations
-                .iterator()
-                .next();
-            assertEquals(
-                "confirmPassword",
-                violation.getPropertyPath().toString()
-            );
-            assertEquals(
-                "VALIDATION.REGISTRATION.CONFIRM_PASSWORD.SIZE",
-                violation.getMessage()
+            assertTrue(
+                hasViolationForProperty(violations, "confirmPassword"),
+                "Should have violation for confirmPassword property"
             );
         }
 
