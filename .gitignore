@@ -34,5 +34,6 @@ build/
 
 ### Project files ###
 .env
+.sdkmanrc
 src/main/resources/keys/local-only/
 node_modules/
