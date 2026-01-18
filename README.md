@@ -12,7 +12,26 @@ This project implements JWT-based authentication using Spring Security, Spring B
 
 ## Setup
 
-### 1. Generate RSA Keys
+### 1. Configure Environment Variables
+
+Create a `.env` file in the project root with the following properties (for local use only):
+
+```sh
+# Project properties
+APP_NAME=jwt_spring_security
+SPRING_PROFILES_ACTIVE=dev # or "prod"
+
+# Database properties
+DB_URL=localhost
+DB_PORT=5432
+DB_NAME=jwt_spring_security
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+```
+
+Adjust the values as needed for your environment.
+
+### 2. Generate RSA Keys
 
 Before running the application, you must generate the RSA key pair for JWT signing and verification. Run the following commands (for local use only):
 
@@ -32,7 +51,7 @@ To generate Public Key from Private Key:
 openssl rsa -pubout -in private_key.pem -out public_key.pem
 ```
 
-### 2. Start Infrastructure
+### 3. Start Infrastructure
 
 Use Docker Compose to start the PostgreSQL database and pgAdmin:
 
