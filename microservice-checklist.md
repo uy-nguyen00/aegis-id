@@ -2,10 +2,10 @@
 
 ## Auth model & boundaries
 
-- [ ] Auth service is clearly bounded: handles registration, login, token issuing/refresh, and *nothing* domain-specific.
-- [ ] Users and credentials are stored in a database **owned** only by the Auth service (no cross-service shared tables).
+- [X] Auth service is clearly bounded: handles registration, login, token issuing/refresh, and *nothing* domain-specific.
+- [X] Users and credentials are stored in a database **owned** only by the Auth service (no cross-service shared tables).
 - [ ] Access/refresh tokens are JWT (or opaque tokens) with clear claims: subject, roles/permissions, expiry, issuer, audience.
-- [ ] Token TTLs and refresh policies are defined and externalized in configuration (per environment).
+- [X] Token TTLs and refresh policies are defined and externalized in configuration (per environment).
 - [ ] JWT includes `iss` (issuer) and `aud` (audience) claims for downstream validation.
 - [ ] Refresh token rotation implemented (old refresh token invalidated on use) to limit replay attacks.
 - [ ] Token revocation strategy defined (blocklist in Redis/DB, or short-lived tokens only).
