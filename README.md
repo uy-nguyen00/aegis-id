@@ -18,13 +18,13 @@ Create a `.env` file in the project root with the following properties (for loca
 
 ```sh
 # Project properties
-APP_NAME=jwt_spring_security
+APP_NAME=aegis_id
 SPRING_PROFILES_ACTIVE=dev # or "prod"
 
 # Database properties
 DB_URL=localhost
 DB_PORT=5432
-DB_NAME=jwt_spring_security
+DB_NAME=aegis_id
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
 ```

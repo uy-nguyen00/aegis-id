@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.uynguyen</groupId>
-	<artifactId>jwt-spring-security</artifactId>
+	<artifactId>aegis-id</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>${project.name}</name>
-	<description>${project.description}</description>
+	<name>Aegis ID</name>
+	<description>Authentication and Identity Service</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -31,10 +31,6 @@
 		<jjwt.version>0.12.6</jjwt.version>
 		<openapi.version>2.8.14</openapi.version>
 		<argLine/>
-		
-		<!-- Customizable project properties -->
-		<project.name>jwt-spring-security</project.name>
-		<project.description>Spring Boot project implementing JWT asymmetric encryption</project.description>
 	</properties>
 	<dependencies>
 
