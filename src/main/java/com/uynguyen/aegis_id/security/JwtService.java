@@ -8,6 +8,8 @@ import io.jsonwebtoken.Jwts;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
 public class JwtService {
 
     private static final String TOKEN_TYPE = "token_type";
+    private static final String ROLES_CLAIM = "roles";
+
     private final PrivateKey privateKey;
     private final PublicKey publicKey;
 
@@ -24,6 +28,12 @@ public class JwtService {
 
     @Value("${app.security.jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
+
+    @Value("${app.security.jwt.issuer}")
+    private String issuer;
+
+    @Value("${app.security.jwt.audience}")
+    private String audience;
 
     public JwtService() throws Exception {
         this.privateKey = KeyUtils.loadPrivateKey(
@@ -34,14 +44,23 @@ public class JwtService {
         );
     }
 
-    public String generateAccessToken(final String username) {
-        // TODO add role here
-        final Map<String, Object> claims = Map.of(TOKEN_TYPE, "ACCESS_TOKEN");
+    public String generateAccessToken(
+        final String username,
+        final List<String> roles
+    ) {
+        final Map<String, Object> claims = new HashMap<>();
+        claims.put(TOKEN_TYPE, "ACCESS_TOKEN");
+        claims.put(ROLES_CLAIM, roles);
         return buildToken(username, claims, this.accessTokenExpiration);
     }
 
-    public String generateRefreshToken(final String username) {
-        final Map<String, Object> claims = Map.of(TOKEN_TYPE, "REFRESH_TOKEN");
+    public String generateRefreshToken(
+        final String username,
+        final List<String> roles
+    ) {
+        final Map<String, Object> claims = new HashMap<>();
+        claims.put(TOKEN_TYPE, "REFRESH_TOKEN");
+        claims.put(ROLES_CLAIM, roles);
         return buildToken(username, claims, this.refreshTokenExpiration);
     }
 
@@ -53,6 +72,10 @@ public class JwtService {
         return Jwts.builder()
             .claims(claims)
             .subject(username)
+            .issuer(this.issuer)
+            .audience()
+            .add(this.audience)
+            .and()
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + tokenExpiration))
             .signWith(this.privateKey)
@@ -75,10 +98,17 @@ public class JwtService {
         return extractClaims(token).getSubject();
     }
 
+    @SuppressWarnings("unchecked")
+    public List<String> extractRolesFromToken(String token) {
+        return extractClaims(token).get(ROLES_CLAIM, List.class);
+    }
+
     private Claims extractClaims(String token) {
         try {
             return Jwts.parser()
                 .verifyWith(this.publicKey)
+                .requireIssuer(this.issuer)
+                .requireAudience(this.audience)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
@@ -87,6 +117,7 @@ public class JwtService {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public String refreshAccessToken(final String refreshToken) {
         final Claims claims = extractClaims(refreshToken);
 
@@ -99,6 +130,7 @@ public class JwtService {
         }
 
         final String username = claims.getSubject();
-        return generateAccessToken(username);
+        final List<String> roles = claims.get(ROLES_CLAIM, List.class);
+        return generateAccessToken(username, roles);
     }
 }

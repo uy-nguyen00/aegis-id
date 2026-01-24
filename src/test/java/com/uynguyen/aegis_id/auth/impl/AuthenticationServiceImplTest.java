@@ -239,10 +239,10 @@ public class AuthenticationServiceImplTest {
                 )
             ).thenReturn(authentication);
 
-            when(jwtService.generateAccessToken(any())).thenReturn(
+            when(jwtService.generateAccessToken(any(), any())).thenReturn(
                 "access-token"
             );
-            when(jwtService.generateRefreshToken(any())).thenReturn(
+            when(jwtService.generateRefreshToken(any(), any())).thenReturn(
                 "refresh-token"
             );
 
@@ -260,8 +260,8 @@ public class AuthenticationServiceImplTest {
             verify(authenticationManager).authenticate(
                 any(UsernamePasswordAuthenticationToken.class)
             );
-            verify(jwtService).generateAccessToken(any());
-            verify(jwtService).generateRefreshToken(any());
+            verify(jwtService).generateAccessToken(any(), any());
+            verify(jwtService).generateRefreshToken(any(), any());
         }
 
         @Test
@@ -283,7 +283,7 @@ public class AuthenticationServiceImplTest {
                 authenticationService.login(request)
             );
 
-            verify(jwtService, never()).generateAccessToken(anyString());
+            verify(jwtService, never()).generateAccessToken(anyString(), any());
         }
     }
 

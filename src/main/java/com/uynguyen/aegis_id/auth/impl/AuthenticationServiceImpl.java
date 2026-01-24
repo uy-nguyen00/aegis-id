@@ -68,11 +68,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             );
 
         final User user = (User) authentication.getPrincipal();
+        final List<String> roles = user
+            .getAuthorities()
+            .stream()
+            .map(authority -> authority.getAuthority())
+            .toList();
+
         final String accessToken = this.jwtService.generateAccessToken(
-            user.getUsername()
+            user.getUsername(),
+            roles
         );
         final String refreshToken = this.jwtService.generateRefreshToken(
-            user.getUsername()
+            user.getUsername(),
+            roles
         );
         final String tokenType = "Bearer";
 
