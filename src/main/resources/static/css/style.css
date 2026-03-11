@@ -1,0 +1,201 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 420px;
+    padding: 2rem;
+}
+
+h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #16213e;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.tab {
+    flex: 1;
+    padding: 0.6rem 0;
+    border: none;
+    background: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.tab:hover {
+    color: #16213e;
+}
+
+.tab.active {
+    color: #0f3460;
+    border-bottom-color: #0f3460;
+}
+
+/* Form */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.field label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #444;
+}
+
+.field input {
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+.field input:focus {
+    border-color: #0f3460;
+}
+
+.field input.input-error {
+    border-color: #e74c3c;
+}
+
+.field-error {
+    font-size: 0.78rem;
+    color: #e74c3c;
+    min-height: 1rem;
+}
+
+/* Button */
+.btn {
+    padding: 0.7rem;
+    border: none;
+    border-radius: 6px;
+    background: #0f3460;
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 0.25rem;
+}
+
+.btn:hover {
+    background: #16213e;
+}
+
+.btn:disabled {
+    background: #999;
+    cursor: not-allowed;
+}
+
+/* Messages */
+.message {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.message.success {
+    background: #eafaf1;
+    color: #1e8449;
+    border: 1px solid #a9dfbf;
+}
+
+.message.error {
+    background: #fdedec;
+    color: #c0392b;
+    border: 1px solid #f5b7b1;
+}
+
+/* Token result */
+.token-result {
+    margin-top: 1.25rem;
+    padding: 1rem;
+    background: #f7f9fc;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.token-result h3 {
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    color: #16213e;
+}
+
+.token-field {
+    margin-bottom: 0.6rem;
+}
+
+.token-field label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 0.2rem;
+}
+
+.token-field textarea,
+.token-field input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, monospace;
+    font-size: 0.75rem;
+    background: #fff;
+    resize: vertical;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .card {
+        padding: 1.25rem;
+    }
+}
