@@ -27,6 +27,10 @@ DB_PORT=5432
 DB_NAME=aegis_id
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
+
+# CORS & Redirect
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+ALLOWED_REDIRECT_URIS=http://localhost:3000/callback
 ```
 
 Adjust the values as needed for your environment.

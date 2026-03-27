@@ -14,3 +14,9 @@ spring:
         show-sql: false
         properties:
             "[hibernate.format_sql]": true
+
+app:
+    security:
+        cors:
+            allowed-origins: http://localhost:3000
+        allowed-redirect-uris: http://localhost:3000/callback,http://localhost:4200/callback

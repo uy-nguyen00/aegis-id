@@ -72,6 +72,12 @@ public enum ErrorCode {
         "INTERNAL_SERVER_ERROR",
         "Internal Server Error",
         HttpStatus.INTERNAL_SERVER_ERROR
+    ),
+
+    INVALID_REDIRECT_URI(
+        "INVALID_REDIRECT_URI",
+        "The provided redirect URI is not allowed: %s",
+        BAD_REQUEST
     );
 
     private final String code;

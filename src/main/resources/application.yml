@@ -26,4 +26,7 @@ app:
             refresh-token-expiration: 604800000
             issuer: ${JWT_ISSUER:aegis-id}
             audience: ${JWT_AUDIENCE:aegis-api}
+        cors:
+            allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+        allowed-redirect-uris: ${ALLOWED_REDIRECT_URIS:http://localhost:3000/callback}
         disposable-email-domains: 10minutemail,20minutemail,33mail,5ymail,anonbox,guerrillamail,mailinator,maildrop,mailnesia,moakt,my10minutemail,throwawaymail,trashmail,temp-mail,tempmail,truemail,yopmail
