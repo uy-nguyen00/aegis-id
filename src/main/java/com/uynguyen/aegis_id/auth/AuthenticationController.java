@@ -1,9 +1,12 @@
 package com.uynguyen.aegis_id.auth;
 
 import com.uynguyen.aegis_id.auth.request.AuthenticationRequest;
+import com.uynguyen.aegis_id.auth.request.AuthorizeRequest;
+import com.uynguyen.aegis_id.auth.request.CodeExchangeRequest;
 import com.uynguyen.aegis_id.auth.request.RefreshTokenRequest;
 import com.uynguyen.aegis_id.auth.request.RegistrationRequest;
 import com.uynguyen.aegis_id.auth.response.AuthenticationResponse;
+import com.uynguyen.aegis_id.auth.response.AuthorizeResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +46,22 @@ public class AuthenticationController {
     ) {
         return ResponseEntity.ok(
             this.authenticationService.refreshToken(request)
+        );
+    }
+
+    @PostMapping("/authorize")
+    public ResponseEntity<AuthorizeResponse> authorize(
+        @Valid @RequestBody final AuthorizeRequest request
+    ) {
+        return ResponseEntity.ok(this.authenticationService.authorize(request));
+    }
+
+    @PostMapping("/exchange")
+    public ResponseEntity<AuthenticationResponse> exchange(
+        @Valid @RequestBody final CodeExchangeRequest request
+    ) {
+        return ResponseEntity.ok(
+            this.authenticationService.exchangeCode(request)
         );
     }
 }

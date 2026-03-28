@@ -3,8 +3,12 @@
 
     const API = {
         LOGIN: "/api/v1/auth/login",
+        AUTHORIZE: "/api/v1/auth/authorize",
         REGISTER: "/api/v1/auth/register",
     };
+
+    // --- Redirect URI detection ---
+    var redirectUri = new URLSearchParams(window.location.search).get("redirect_uri");
 
     // --- DOM refs ---
     const tabs = document.querySelectorAll(".tab");
@@ -38,15 +42,29 @@
         clearMessages();
         clearFieldErrors(loginForm);
 
-        var data = {
-            email: val("login-email"),
-            password: val("login-password"),
-        };
+        if (redirectUri) {
+            var authorizeData = {
+                email: val("login-email"),
+                password: val("login-password"),
+                redirectUri: redirectUri,
+            };
 
-        submitForm(API.LOGIN, data, loginForm, function (json) {
-            showTokens(json);
-            showMessage("Login successful.", "success");
-        });
+            submitForm(API.AUTHORIZE, authorizeData, loginForm, function (json) {
+                showMessage("Login successful. Redirecting...", "success");
+                var target = json.redirect_uri + "?code=" + encodeURIComponent(json.code);
+                window.location.href = target;
+            });
+        } else {
+            var data = {
+                email: val("login-email"),
+                password: val("login-password"),
+            };
+
+            submitForm(API.LOGIN, data, loginForm, function (json) {
+                showTokens(json);
+                showMessage("Login successful.", "success");
+            });
+        }
     });
 
     // --- Register ---

@@ -1,21 +1,30 @@
 package com.uynguyen.aegis_id.auth.impl;
 
 import com.uynguyen.aegis_id.auth.AuthenticationService;
+import com.uynguyen.aegis_id.auth.AuthorizationCode;
+import com.uynguyen.aegis_id.auth.AuthorizationCodeRepository;
 import com.uynguyen.aegis_id.auth.request.AuthenticationRequest;
+import com.uynguyen.aegis_id.auth.request.AuthorizeRequest;
+import com.uynguyen.aegis_id.auth.request.CodeExchangeRequest;
 import com.uynguyen.aegis_id.auth.request.RefreshTokenRequest;
 import com.uynguyen.aegis_id.auth.request.RegistrationRequest;
 import com.uynguyen.aegis_id.auth.response.AuthenticationResponse;
+import com.uynguyen.aegis_id.auth.response.AuthorizeResponse;
 import com.uynguyen.aegis_id.exception.BusinessException;
 import com.uynguyen.aegis_id.exception.ErrorCode;
 import com.uynguyen.aegis_id.role.Role;
 import com.uynguyen.aegis_id.role.RoleRepository;
 import com.uynguyen.aegis_id.security.JwtService;
+import com.uynguyen.aegis_id.security.RedirectUriValidator;
 import com.uynguyen.aegis_id.user.User;
 import com.uynguyen.aegis_id.user.UserMapper;
 import com.uynguyen.aegis_id.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +43,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
+    private final RedirectUriValidator redirectUriValidator;
+    private final AuthorizationCodeRepository authorizationCodeRepository;
 
     @Override
     @Transactional
@@ -126,5 +137,94 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (password == null || !password.equals(confirmPassword)) {
             throw new BusinessException(ErrorCode.PASSWORDS_MISMATCH);
         }
+    }
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final long CODE_TTL_SECONDS = 60;
+
+    @Override
+    @Transactional
+    public AuthorizeResponse authorize(AuthorizeRequest request) {
+        this.redirectUriValidator.validate(request.getRedirectUri());
+
+        final Authentication authentication =
+            this.authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                    request.getEmail(),
+                    request.getPassword()
+                )
+            );
+
+        final User user = (User) authentication.getPrincipal();
+
+        byte[] randomBytes = new byte[32];
+        SECURE_RANDOM.nextBytes(randomBytes);
+        String code = Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(randomBytes);
+
+        AuthorizationCode authCode = AuthorizationCode.builder()
+            .code(code)
+            .userId(user.getId())
+            .redirectUri(request.getRedirectUri())
+            .expiresAt(Instant.now().plusSeconds(CODE_TTL_SECONDS))
+            .used(false)
+            .build();
+        this.authorizationCodeRepository.save(authCode);
+
+        return AuthorizeResponse.builder()
+            .code(code)
+            .redirectUri(request.getRedirectUri())
+            .build();
+    }
+
+    @Override
+    @Transactional
+    public AuthenticationResponse exchangeCode(CodeExchangeRequest request) {
+        final AuthorizationCode authCode =
+            this.authorizationCodeRepository.findByCode(
+                request.getCode()
+            ).orElseThrow(() ->
+                new BusinessException(ErrorCode.INVALID_AUTHORIZATION_CODE)
+            );
+
+        if (
+            authCode.isUsed() || Instant.now().isAfter(authCode.getExpiresAt())
+        ) {
+            throw new BusinessException(ErrorCode.INVALID_AUTHORIZATION_CODE);
+        }
+
+        authCode.setUsed(true);
+        this.authorizationCodeRepository.save(authCode);
+
+        final User user = this.userRepository.findById(
+            authCode.getUserId()
+        ).orElseThrow(() ->
+            new BusinessException(
+                ErrorCode.USER_NOT_FOUND,
+                authCode.getUserId()
+            )
+        );
+
+        final List<String> roles = user
+            .getAuthorities()
+            .stream()
+            .map(authority -> authority.getAuthority())
+            .toList();
+
+        final String accessToken = this.jwtService.generateAccessToken(
+            user.getUsername(),
+            roles
+        );
+        final String refreshToken = this.jwtService.generateRefreshToken(
+            user.getUsername(),
+            roles
+        );
+
+        return AuthenticationResponse.builder()
+            .accessToken(accessToken)
+            .refreshToken(refreshToken)
+            .tokenType("Bearer")
+            .build();
     }
 }

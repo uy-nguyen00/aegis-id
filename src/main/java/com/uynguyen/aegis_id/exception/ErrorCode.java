@@ -78,6 +78,12 @@ public enum ErrorCode {
         "INVALID_REDIRECT_URI",
         "The provided redirect URI is not allowed: %s",
         BAD_REQUEST
+    ),
+
+    INVALID_AUTHORIZATION_CODE(
+        "INVALID_AUTHORIZATION_CODE",
+        "The authorization code is invalid, expired, or has already been used",
+        BAD_REQUEST
     );
 
     private final String code;
