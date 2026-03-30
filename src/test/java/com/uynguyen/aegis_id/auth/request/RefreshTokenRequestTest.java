@@ -9,6 +9,9 @@ import jakarta.validation.ValidatorFactory;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class RefreshTokenRequestTest {
 
@@ -38,57 +41,13 @@ class RefreshTokenRequestTest {
         );
     }
 
-    @Test
-    void testRefreshTokenCannotBeBlank() {
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = { "   " })
+    void testRefreshTokenCannotBeBlankOrNullOrWhitespace(String refreshToken) {
         // Given
         RefreshTokenRequest request = RefreshTokenRequest.builder()
-            .refreshToken("")
-            .build();
-
-        // When
-        Set<ConstraintViolation<RefreshTokenRequest>> violations =
-            validator.validate(request);
-
-        // Then
-        assertEquals(1, violations.size());
-        ConstraintViolation<RefreshTokenRequest> violation = violations
-            .iterator()
-            .next();
-        assertEquals("refreshToken", violation.getPropertyPath().toString());
-        assertEquals(
-            "VALIDATION.REFRESH_TOKEN.NOT_BLANK",
-            violation.getMessage()
-        );
-    }
-
-    @Test
-    void testRefreshTokenCannotBeNull() {
-        // Given
-        RefreshTokenRequest request = RefreshTokenRequest.builder()
-            .refreshToken(null)
-            .build();
-
-        // When
-        Set<ConstraintViolation<RefreshTokenRequest>> violations =
-            validator.validate(request);
-
-        // Then
-        assertEquals(1, violations.size());
-        ConstraintViolation<RefreshTokenRequest> violation = violations
-            .iterator()
-            .next();
-        assertEquals("refreshToken", violation.getPropertyPath().toString());
-        assertEquals(
-            "VALIDATION.REFRESH_TOKEN.NOT_BLANK",
-            violation.getMessage()
-        );
-    }
-
-    @Test
-    void testRefreshTokenCannotBeWhitespace() {
-        // Given
-        RefreshTokenRequest request = RefreshTokenRequest.builder()
-            .refreshToken("   ")
+            .refreshToken(refreshToken)
             .build();
 
         // When
