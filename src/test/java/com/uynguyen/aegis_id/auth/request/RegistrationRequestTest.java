@@ -8,6 +8,10 @@ import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -154,42 +158,15 @@ class RegistrationRequestTest {
             );
         }
 
-        @Test
-        @DisplayName("Should accept first name with apostrophe")
-        void testFirstNameWithApostrophe() {
+        @ParameterizedTest
+        @DisplayName(
+            "Should accept first name with allowed punctuation/spacing"
+        )
+        @ValueSource(strings = { "O'Brien", "Jean-Pierre", "Mary Anne" })
+        void testFirstNameWithAllowedCharacters(String firstName) {
             // Given
             RegistrationRequest request = createValidRequest();
-            request.setFirstName("O'Brien");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertTrue(violations.isEmpty());
-        }
-
-        @Test
-        @DisplayName("Should accept first name with hyphen")
-        void testFirstNameWithHyphen() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setFirstName("Jean-Pierre");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertTrue(violations.isEmpty());
-        }
-
-        @Test
-        @DisplayName("Should accept first name with space")
-        void testFirstNameWithSpace() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setFirstName("Mary Anne");
+            request.setFirstName(firstName);
 
             // When
             Set<ConstraintViolation<RegistrationRequest>> violations =
@@ -315,50 +292,14 @@ class RegistrationRequestTest {
     @DisplayName("Email Validation Tests")
     class EmailTests {
 
-        @Test
-        @DisplayName("Should reject blank email")
-        void testEmailCannotBeBlank() {
+        @ParameterizedTest
+        @DisplayName("Should reject blank/null/invalid email")
+        @NullAndEmptySource
+        @ValueSource(strings = { "invalid-email" })
+        void testEmailInvalidValues(String email) {
             // Given
             RegistrationRequest request = createValidRequest();
-            request.setEmail("");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "email"),
-                "Should have violation for email property"
-            );
-        }
-
-        @Test
-        @DisplayName("Should reject null email")
-        void testEmailCannotBeNull() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setEmail(null);
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "email"),
-                "Should have violation for email property"
-            );
-        }
-
-        @Test
-        @DisplayName("Should reject invalid email format")
-        void testEmailInvalidFormat() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setEmail("invalid-email");
+            request.setEmail(email);
 
             // When
             Set<ConstraintViolation<RegistrationRequest>> violations =
@@ -479,42 +420,15 @@ class RegistrationRequestTest {
             assertFalse(violations.isEmpty());
         }
 
-        @Test
-        @DisplayName("Should accept phone number with plus sign")
-        void testPhoneNumberWithPlus() {
+        @ParameterizedTest
+        @DisplayName("Should accept valid phone number formats")
+        @ValueSource(
+            strings = { "+33123456789", "33123456789", "+14155552671" }
+        )
+        void testValidPhoneNumberFormats(String phoneNumber) {
             // Given
             RegistrationRequest request = createValidRequest();
-            request.setPhoneNumber("+33123456789");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertTrue(violations.isEmpty());
-        }
-
-        @Test
-        @DisplayName("Should accept phone number without plus sign")
-        void testPhoneNumberWithoutPlus() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setPhoneNumber("33123456789");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertTrue(violations.isEmpty());
-        }
-
-        @Test
-        @DisplayName("Should accept international phone number")
-        void testInternationalPhoneNumber() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setPhoneNumber("+14155552671");
+            request.setPhoneNumber(phoneNumber);
 
             // When
             Set<ConstraintViolation<RegistrationRequest>> violations =
@@ -549,44 +463,6 @@ class RegistrationRequestTest {
         }
 
         @Test
-        @DisplayName("Should reject null password")
-        void testPasswordCannotBeNull() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setPassword(null);
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "password"),
-                "Should have violation for password property"
-            );
-        }
-
-        @Test
-        @DisplayName("Should reject password shorter than 8 characters")
-        void testPasswordMinLength() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setPassword("Pass1!");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "password"),
-                "Should have violation for password property"
-            );
-        }
-
-        @Test
         @DisplayName("Should reject password longer than 72 characters")
         void testPasswordMaxLength() {
             // Given
@@ -605,69 +481,18 @@ class RegistrationRequestTest {
             );
         }
 
-        @Test
-        @DisplayName("Should reject password without uppercase letter")
-        void testPasswordWithoutUppercase() {
+        @ParameterizedTest
+        @DisplayName("Should reject null/short/weak password variants")
+        @NullSource
+        @ValueSource(
+            strings = {
+                "Pass1!", "password1!", "PASSWORD1!", "Password!", "Password1",
+            }
+        )
+        void testInvalidPasswordVariants(String password) {
             // Given
             RegistrationRequest request = createValidRequest();
-            request.setPassword("password1!");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "password"),
-                "Should have violation for password property"
-            );
-        }
-
-        @Test
-        @DisplayName("Should reject password without lowercase letter")
-        void testPasswordWithoutLowercase() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setPassword("PASSWORD1!");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "password"),
-                "Should have violation for password property"
-            );
-        }
-
-        @Test
-        @DisplayName("Should reject password without digit")
-        void testPasswordWithoutDigit() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setPassword("Password!");
-
-            // When
-            Set<ConstraintViolation<RegistrationRequest>> violations =
-                validator.validate(request);
-
-            // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "password"),
-                "Should have violation for password property"
-            );
-        }
-
-        @Test
-        @DisplayName("Should reject password without special character")
-        void testPasswordWithoutSpecialCharacter() {
-            // Given
-            RegistrationRequest request = createValidRequest();
-            request.setPassword("Password1");
+            request.setPassword(password);
 
             // When
             Set<ConstraintViolation<RegistrationRequest>> violations =
