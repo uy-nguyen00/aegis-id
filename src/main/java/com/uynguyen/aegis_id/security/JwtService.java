@@ -25,6 +25,8 @@ public class JwtService {
 
     private static final String TOKEN_TYPE = "token_type";
     private static final String ROLES_CLAIM = "roles";
+    private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
+    private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
 
     private final PrivateKey privateKey;
     private final PublicKey publicKey;
@@ -85,33 +87,33 @@ public class JwtService {
     }
 
     public String generateAccessToken(
-        final String username,
+        final String userId,
         final List<String> roles
     ) {
         final Map<String, Object> claims = new HashMap<>();
-        claims.put(TOKEN_TYPE, "ACCESS_TOKEN");
+        claims.put(TOKEN_TYPE, ACCESS_TOKEN);
         claims.put(ROLES_CLAIM, roles);
-        return buildToken(username, claims, this.accessTokenExpiration);
+        return buildToken(userId, claims, this.accessTokenExpiration);
     }
 
     public String generateRefreshToken(
-        final String username,
+        final String userId,
         final List<String> roles
     ) {
         final Map<String, Object> claims = new HashMap<>();
-        claims.put(TOKEN_TYPE, "REFRESH_TOKEN");
+        claims.put(TOKEN_TYPE, REFRESH_TOKEN);
         claims.put(ROLES_CLAIM, roles);
-        return buildToken(username, claims, this.refreshTokenExpiration);
+        return buildToken(userId, claims, this.refreshTokenExpiration);
     }
 
     private String buildToken(
-        final String username,
+        final String userId,
         final Map<String, Object> claims,
         long tokenExpiration
     ) {
         return Jwts.builder()
             .claims(claims)
-            .subject(username)
+            .subject(userId)
             .issuer(this.issuer)
             .audience()
             .add(this.audience)
@@ -124,17 +126,23 @@ public class JwtService {
 
     public boolean isTokenValid(
         final String token,
-        final String expectedUsername
+        final String expectedUserId
     ) {
-        final String username = extractUsernameFromToken(token);
-        return username.equals(expectedUsername) && !isTokenExpired(token);
+        final Claims claims = extractClaims(token);
+        final String userId = claims.getSubject();
+        final String tokenType = claims.get(TOKEN_TYPE, String.class);
+
+        return
+            expectedUserId.equals(userId) &&
+            ACCESS_TOKEN.equals(tokenType) &&
+            !claims.getExpiration().before(new Date());
     }
 
     private boolean isTokenExpired(final String token) {
         return extractClaims(token).getExpiration().before(new Date());
     }
 
-    public String extractUsernameFromToken(String token) {
+    public String extractUserIdFromToken(String token) {
         return extractClaims(token).getSubject();
     }
 
@@ -161,7 +169,7 @@ public class JwtService {
     public String refreshAccessToken(final String refreshToken) {
         final Claims claims = extractClaims(refreshToken);
 
-        if (!"REFRESH_TOKEN".equals(claims.get(TOKEN_TYPE))) {
+        if (!REFRESH_TOKEN.equals(claims.get(TOKEN_TYPE))) {
             throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
 
@@ -169,8 +177,8 @@ public class JwtService {
             throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
 
-        final String username = claims.getSubject();
+        final String userId = claims.getSubject();
         final List<String> roles = claims.get(ROLES_CLAIM, List.class);
-        return generateAccessToken(username, roles);
+        return generateAccessToken(userId, roles);
     }
 }

@@ -14,6 +14,7 @@ import com.uynguyen.aegis_id.security.JwtService;
 import com.uynguyen.aegis_id.user.request.ChangePasswordRequest;
 import com.uynguyen.aegis_id.user.request.ProfileUpdateRequest;
 import java.time.LocalDate;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,7 +30,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 @ActiveProfiles("prod")
-public class UserControllerTest {
+class UserControllerTest {
 
     @Autowired
     private RestTestClient restTestClient;
@@ -38,23 +39,25 @@ public class UserControllerTest {
     private UserService userService;
 
     @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
     private JwtService jwtService;
 
     private final String apiPrefix = "/api/v1/users/";
     private final String token = "valid-token";
-    private final String username = "user@example.com";
+    private final String userId = "user-id";
+    private final String userEmail = "user@example.com";
     private User user;
 
     @BeforeEach
     void setUp() {
-        this.user = User.builder().id("user-id").email(username).build();
+        this.user = User.builder().id(userId).email(userEmail).build();
 
-        when(this.jwtService.extractUsernameFromToken(token)).thenReturn(
-            username
-        );
-        when(this.jwtService.isTokenValid(token, username)).thenReturn(true);
-        when(this.userService.loadUserByUsername(username)).thenReturn(
-            this.user
+        when(this.jwtService.extractUserIdFromToken(token)).thenReturn(userId);
+        when(this.jwtService.isTokenValid(token, userId)).thenReturn(true);
+        when(this.userRepository.findById(userId)).thenReturn(
+            Optional.of(this.user)
         );
     }
 
@@ -229,7 +232,7 @@ public class UserControllerTest {
                 .expectStatus()
                 .isNoContent();
 
-            verify(userService).deactivateAccount(eq("user-id"));
+            verify(userService).deactivateAccount("user-id");
         }
 
         @Test
@@ -241,7 +244,7 @@ public class UserControllerTest {
                 new BusinessException(ErrorCode.ACCOUNT_ALREADY_DEACTIVATED)
             )
                 .when(userService)
-                .deactivateAccount(eq("user-id"));
+                .deactivateAccount("user-id");
 
             restTestClient
                 .patch()
@@ -275,7 +278,7 @@ public class UserControllerTest {
                 .expectStatus()
                 .isNoContent();
 
-            verify(userService).reactivateAccount(eq("user-id"));
+            verify(userService).reactivateAccount("user-id");
         }
 
         @Test
@@ -285,7 +288,7 @@ public class UserControllerTest {
         void shouldReturnBadRequest_WhenAccountAlreadyActivated() {
             doThrow(new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED))
                 .when(userService)
-                .reactivateAccount(eq("user-id"));
+                .reactivateAccount("user-id");
 
             restTestClient
                 .patch()
@@ -319,7 +322,7 @@ public class UserControllerTest {
                 .expectStatus()
                 .isNoContent();
 
-            verify(userService).deleteAccount(eq("user-id"));
+            verify(userService).deleteAccount("user-id");
         }
 
         @Test
@@ -329,7 +332,7 @@ public class UserControllerTest {
         void shouldReturnBadRequest_WhenAccountAlreadyActivated() {
             doThrow(new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED))
                 .when(userService)
-                .deleteAccount(eq("user-id"));
+                .deleteAccount("user-id");
 
             restTestClient
                 .delete()
