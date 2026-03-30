@@ -33,6 +33,10 @@ services:
             DB_NAME: ${DB_NAME}
             DB_USERNAME: ${DB_USERNAME}
             DB_PASSWORD: ${DB_PASSWORD}
+            JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
+            JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+            JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION}
+            JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION}
         depends_on:
             postgres:
                 condition: service_healthy
