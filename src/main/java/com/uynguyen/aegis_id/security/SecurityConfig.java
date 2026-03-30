@@ -23,7 +23,7 @@ public class SecurityConfig {
     @Value("${spring.profiles.active}")
     private String env;
 
-    private List<String> PUBLIC_URLS = new ArrayList<>(
+    private List<String> publicUrls = new ArrayList<>(
         List.of(
             "/api/v1/auth/login",
             "/api/v1/auth/register",
@@ -47,28 +47,34 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
     @Bean
-    public SecurityFilterChain filterChain(final HttpSecurity http)
-        throws Exception {
+    public SecurityFilterChain filterChain(final HttpSecurity http) {
         if (env.indexOf("dev") >= 0) {
-            PUBLIC_URLS.add("/");
+            publicUrls.add("/");
         }
 
-        return http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth ->
-                auth
-                    .requestMatchers(PUBLIC_URLS.toArray(new String[0]))
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated()
-            )
-            .sessionManagement(sess ->
-                sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .addFilterBefore(
-                this.jwtFilter,
-                UsernamePasswordAuthenticationFilter.class
-            )
-            .build();
+        try {
+            return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth ->
+                    auth
+                        .requestMatchers(publicUrls.toArray(new String[0]))
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated()
+                )
+                .sessionManagement(sess ->
+                    sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .addFilterBefore(
+                    this.jwtFilter,
+                    UsernamePasswordAuthenticationFilter.class
+                )
+                .build();
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                "Failed to build security filter chain",
+                e
+            );
+        }
     }
 }
