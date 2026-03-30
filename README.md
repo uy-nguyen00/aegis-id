@@ -1,5 +1,6 @@
 # Aegis ID
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=uy-nguyen00_aegis-id&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=uy-nguyen00_aegis-id) 
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
 This project implements JWT-based authentication using Spring Security, Spring Boot 4 and Java 25.
