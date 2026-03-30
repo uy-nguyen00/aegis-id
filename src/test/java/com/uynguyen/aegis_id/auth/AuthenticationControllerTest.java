@@ -12,7 +12,6 @@ import com.uynguyen.aegis_id.auth.response.AuthenticationResponse;
 import com.uynguyen.aegis_id.exception.BusinessException;
 import com.uynguyen.aegis_id.exception.ErrorCode;
 import com.uynguyen.aegis_id.handler.ErrorResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 @ActiveProfiles("prod")
-public class AuthenticationControllerTest {
+class AuthenticationControllerTest {
 
     @Autowired
     private RestTestClient restTestClient;
@@ -37,9 +36,6 @@ public class AuthenticationControllerTest {
     private AuthenticationService authenticationService;
 
     private final String apiPrefix = "/api/v1/auth/";
-
-    @BeforeEach
-    void setUp() {}
 
     @Nested
     @DisplayName("/login Tests")
