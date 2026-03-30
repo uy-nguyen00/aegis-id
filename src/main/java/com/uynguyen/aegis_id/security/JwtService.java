@@ -5,8 +5,14 @@ import com.uynguyen.aegis_id.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -35,13 +41,47 @@ public class JwtService {
     @Value("${app.security.jwt.audience}")
     private String audience;
 
-    public JwtService() throws Exception {
-        this.privateKey = KeyUtils.loadPrivateKey(
-            "keys/local-only/private_key.pem"
-        );
-        this.publicKey = KeyUtils.loadPublicKey(
-            "keys/local-only/public_key.pem"
-        );
+    public JwtService(
+        @Value("${app.security.jwt.private-key}") String privateKeyBase64,
+        @Value("${app.security.jwt.public-key}") String publicKeyBase64
+    ) {
+        final KeyFactory keyFactory;
+        try {
+            keyFactory = KeyFactory.getInstance("RSA");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(
+                "RSA algorithm is not available in this JVM",
+                e
+            );
+        }
+
+        try {
+            byte[] privateDecoded = Base64.getDecoder().decode(
+                privateKeyBase64
+            );
+            this.privateKey = keyFactory.generatePrivate(
+                new PKCS8EncodedKeySpec(privateDecoded)
+            );
+        } catch (IllegalArgumentException | InvalidKeySpecException e) {
+            throw new IllegalArgumentException(
+                "Invalid value for app.security.jwt.private-key (JWT_PRIVATE_KEY): " +
+                    "must be a Base64-encoded PKCS#8 RSA private key",
+                e
+            );
+        }
+
+        try {
+            byte[] publicDecoded = Base64.getDecoder().decode(publicKeyBase64);
+            this.publicKey = keyFactory.generatePublic(
+                new X509EncodedKeySpec(publicDecoded)
+            );
+        } catch (IllegalArgumentException | InvalidKeySpecException e) {
+            throw new IllegalArgumentException(
+                "Invalid value for app.security.jwt.public-key (JWT_PUBLIC_KEY): " +
+                    "must be a Base64-encoded X.509 RSA public key",
+                e
+            );
+        }
     }
 
     public String generateAccessToken(
@@ -112,7 +152,7 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        } catch (final JwtException e) {
+        } catch (final JwtException _) {
             throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
     }
@@ -121,12 +161,12 @@ public class JwtService {
     public String refreshAccessToken(final String refreshToken) {
         final Claims claims = extractClaims(refreshToken);
 
-        if (!claims.get(TOKEN_TYPE).equals("REFRESH_TOKEN")) {
-            throw new RuntimeException("Invalid token type");
+        if (!"REFRESH_TOKEN".equals(claims.get(TOKEN_TYPE))) {
+            throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
 
         if (isTokenExpired(refreshToken)) {
-            throw new RuntimeException("Refresh token expired");
+            throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
 
         final String username = claims.getSubject();
