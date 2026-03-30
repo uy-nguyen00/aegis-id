@@ -6,8 +6,10 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
@@ -42,25 +44,43 @@ public class JwtService {
     public JwtService(
         @Value("${app.security.jwt.private-key}") String privateKeyBase64,
         @Value("${app.security.jwt.public-key}") String publicKeyBase64
-    ) throws Exception {
+    ) {
+        final KeyFactory keyFactory;
         try {
-            byte[] privateDecoded = Base64.getDecoder().decode(privateKeyBase64);
-            this.privateKey = KeyFactory.getInstance("RSA")
-                .generatePrivate(new PKCS8EncodedKeySpec(privateDecoded));
-        } catch (IllegalArgumentException | java.security.spec.InvalidKeySpecException e) {
+            keyFactory = KeyFactory.getInstance("RSA");
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(
+                "RSA algorithm is not available in this JVM",
+                e
+            );
+        }
+
+        try {
+            byte[] privateDecoded = Base64.getDecoder().decode(
+                privateKeyBase64
+            );
+            this.privateKey = keyFactory.generatePrivate(
+                new PKCS8EncodedKeySpec(privateDecoded)
+            );
+        } catch (IllegalArgumentException | InvalidKeySpecException e) {
             throw new IllegalArgumentException(
                 "Invalid value for app.security.jwt.private-key (JWT_PRIVATE_KEY): " +
-                "must be a Base64-encoded PKCS#8 RSA private key", e);
+                    "must be a Base64-encoded PKCS#8 RSA private key",
+                e
+            );
         }
 
         try {
             byte[] publicDecoded = Base64.getDecoder().decode(publicKeyBase64);
-            this.publicKey = KeyFactory.getInstance("RSA")
-                .generatePublic(new X509EncodedKeySpec(publicDecoded));
-        } catch (IllegalArgumentException | java.security.spec.InvalidKeySpecException e) {
+            this.publicKey = keyFactory.generatePublic(
+                new X509EncodedKeySpec(publicDecoded)
+            );
+        } catch (IllegalArgumentException | InvalidKeySpecException e) {
             throw new IllegalArgumentException(
                 "Invalid value for app.security.jwt.public-key (JWT_PUBLIC_KEY): " +
-                "must be a Base64-encoded X.509 RSA public key", e);
+                    "must be a Base64-encoded X.509 RSA public key",
+                e
+            );
         }
     }
 
