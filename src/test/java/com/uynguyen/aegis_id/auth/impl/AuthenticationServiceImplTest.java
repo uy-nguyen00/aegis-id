@@ -3,6 +3,7 @@ package com.uynguyen.aegis_id.auth.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.uynguyen.aegis_id.auth.request.AuthenticationRequest;
@@ -19,7 +20,6 @@ import com.uynguyen.aegis_id.user.UserMapper;
 import com.uynguyen.aegis_id.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ import org.springframework.security.core.Authentication;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthenticationServiceImpl Unit Tests")
-public class AuthenticationServiceImplTest {
+class AuthenticationServiceImplTest {
 
     @Mock
     private AuthenticationManager authenticationManager;
@@ -54,9 +54,6 @@ public class AuthenticationServiceImplTest {
     @InjectMocks
     private AuthenticationServiceImpl authenticationService;
 
-    @BeforeEach
-    void setUp() {}
-
     @Nested
     @DisplayName("register Tests")
     class RegisterTests {
@@ -75,6 +72,7 @@ public class AuthenticationServiceImplTest {
             role.setName("ROLE_USER");
 
             User user = new User();
+            user.setId("user-id");
             user.setEmail("test@example.com");
 
             when(
@@ -228,6 +226,7 @@ public class AuthenticationServiceImplTest {
             when(request.getPassword()).thenReturn("password");
 
             User user = new User();
+            user.setId("user-id");
             user.setEmail("test@example.com");
 
             Authentication authentication = mock(Authentication.class);
@@ -260,8 +259,8 @@ public class AuthenticationServiceImplTest {
             verify(authenticationManager).authenticate(
                 any(UsernamePasswordAuthenticationToken.class)
             );
-            verify(jwtService).generateAccessToken(any(), any());
-            verify(jwtService).generateRefreshToken(any(), any());
+            verify(jwtService).generateAccessToken(eq("user-id"), any());
+            verify(jwtService).generateRefreshToken(eq("user-id"), any());
         }
 
         @Test

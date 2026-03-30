@@ -102,22 +102,20 @@ class JwtServiceTest {
         )
         void shouldGenerateAndValidateAccessToken() {
             final List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
+            final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
+            final String otherUserId = "0195f40e-1f9d-7c86-9c2a-cf7e8aefab33";
 
             final String accessToken = jwtService.generateAccessToken(
-                "alice@example.com",
+                userId,
                 roles
             );
 
             assertNotNull(accessToken);
-            assertTrue(
-                jwtService.isTokenValid(accessToken, "alice@example.com")
-            );
-            assertFalse(
-                jwtService.isTokenValid(accessToken, "bob@example.com")
-            );
+            assertTrue(jwtService.isTokenValid(accessToken, userId));
+            assertFalse(jwtService.isTokenValid(accessToken, otherUserId));
             assertEquals(
-                "alice@example.com",
-                jwtService.extractUsernameFromToken(accessToken)
+                userId,
+                jwtService.extractUserIdFromToken(accessToken)
             );
             assertEquals(roles, jwtService.extractRolesFromToken(accessToken));
         }
@@ -126,8 +124,9 @@ class JwtServiceTest {
         @DisplayName("Should refresh access token from a valid refresh token")
         void shouldRefreshAccessToken() {
             final List<String> roles = List.of("ROLE_USER");
+            final String userId = "0195f40f-56bd-78fd-b74d-a0eb9aa48612";
             final String refreshToken = jwtService.generateRefreshToken(
-                "alice@example.com",
+                userId,
                 roles
             );
 
@@ -136,9 +135,7 @@ class JwtServiceTest {
             );
 
             assertNotNull(newAccessToken);
-            assertTrue(
-                jwtService.isTokenValid(newAccessToken, "alice@example.com")
-            );
+            assertTrue(jwtService.isTokenValid(newAccessToken, userId));
             assertEquals(
                 roles,
                 jwtService.extractRolesFromToken(newAccessToken)
@@ -151,7 +148,7 @@ class JwtServiceTest {
         )
         void shouldThrowWhenRefreshingWithAccessToken() {
             final String accessToken = jwtService.generateAccessToken(
-                "alice@example.com",
+                "0195f410-0482-7f7c-9c5c-b93578cb2a9d",
                 List.of("ROLE_USER")
             );
 
@@ -204,7 +201,7 @@ class JwtServiceTest {
 
             final String expiredRefreshToken =
                 expiredJwtService.generateRefreshToken(
-                    "alice@example.com",
+                    "0195f411-6937-75b4-aea2-a0820d643fe7",
                     List.of("ROLE_USER")
                 );
 

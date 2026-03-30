@@ -85,33 +85,33 @@ public class JwtService {
     }
 
     public String generateAccessToken(
-        final String username,
+        final String userId,
         final List<String> roles
     ) {
         final Map<String, Object> claims = new HashMap<>();
         claims.put(TOKEN_TYPE, "ACCESS_TOKEN");
         claims.put(ROLES_CLAIM, roles);
-        return buildToken(username, claims, this.accessTokenExpiration);
+        return buildToken(userId, claims, this.accessTokenExpiration);
     }
 
     public String generateRefreshToken(
-        final String username,
+        final String userId,
         final List<String> roles
     ) {
         final Map<String, Object> claims = new HashMap<>();
         claims.put(TOKEN_TYPE, "REFRESH_TOKEN");
         claims.put(ROLES_CLAIM, roles);
-        return buildToken(username, claims, this.refreshTokenExpiration);
+        return buildToken(userId, claims, this.refreshTokenExpiration);
     }
 
     private String buildToken(
-        final String username,
+        final String userId,
         final Map<String, Object> claims,
         long tokenExpiration
     ) {
         return Jwts.builder()
             .claims(claims)
-            .subject(username)
+            .subject(userId)
             .issuer(this.issuer)
             .audience()
             .add(this.audience)
@@ -124,17 +124,17 @@ public class JwtService {
 
     public boolean isTokenValid(
         final String token,
-        final String expectedUsername
+        final String expectedUserId
     ) {
-        final String username = extractUsernameFromToken(token);
-        return username.equals(expectedUsername) && !isTokenExpired(token);
+        final String userId = extractUserIdFromToken(token);
+        return userId.equals(expectedUserId) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(final String token) {
         return extractClaims(token).getExpiration().before(new Date());
     }
 
-    public String extractUsernameFromToken(String token) {
+    public String extractUserIdFromToken(String token) {
         return extractClaims(token).getSubject();
     }
 
@@ -169,8 +169,8 @@ public class JwtService {
             throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
 
-        final String username = claims.getSubject();
+        final String userId = claims.getSubject();
         final List<String> roles = claims.get(ROLES_CLAIM, List.class);
-        return generateAccessToken(username, roles);
+        return generateAccessToken(userId, roles);
     }
 }

@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -67,19 +68,23 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 )
             );
 
-        final User user = (User) authentication.getPrincipal();
+        final Object principal = authentication.getPrincipal();
+        if (!(principal instanceof User user)) {
+            throw new BusinessException(ErrorCode.BAD_CREDENTIALS);
+        }
+
         final List<String> roles = user
             .getAuthorities()
             .stream()
-            .map(authority -> authority.getAuthority())
+            .map(GrantedAuthority::getAuthority)
             .toList();
 
         final String accessToken = this.jwtService.generateAccessToken(
-            user.getUsername(),
+            user.getId(),
             roles
         );
         final String refreshToken = this.jwtService.generateRefreshToken(
-            user.getUsername(),
+            user.getId(),
             roles
         );
         final String tokenType = "Bearer";

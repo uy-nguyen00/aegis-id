@@ -1,16 +1,19 @@
 package com.uynguyen.aegis_id.security;
 
+import com.uynguyen.aegis_id.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -20,6 +23,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserRepository userRepository;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -36,7 +40,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         final String jwtToken;
-        final String username;
+        final String tokenSubject;
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -44,26 +48,25 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         jwtToken = authHeader.substring(7);
-        username = this.jwtService.extractUsernameFromToken(jwtToken);
+        tokenSubject = this.jwtService.extractUserIdFromToken(jwtToken);
 
         if (
-            username != null &&
+            tokenSubject != null &&
             SecurityContextHolder.getContext().getAuthentication() == null
         ) {
-            final UserDetails userDetails =
-                this.userDetailsService.loadUserByUsername(username);
+            final Optional<UserDetails> userDetails = loadUserDetails(
+                tokenSubject
+            );
 
             if (
-                this.jwtService.isTokenValid(
-                    jwtToken,
-                    userDetails.getUsername()
-                )
+                userDetails.isPresent() &&
+                this.jwtService.isTokenValid(jwtToken, tokenSubject)
             ) {
                 final UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
                     new UsernamePasswordAuthenticationToken(
-                        userDetails,
+                        userDetails.get(),
                         null,
-                        userDetails.getAuthorities()
+                        userDetails.get().getAuthorities()
                     );
 
                 usernamePasswordAuthenticationToken.setDetails(
@@ -77,5 +80,23 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private Optional<UserDetails> loadUserDetails(final String tokenSubject) {
+        final Optional<UserDetails> userById = this.userRepository.findById(
+            tokenSubject
+        ).map(UserDetails.class::cast);
+
+        if (userById.isPresent()) {
+            return userById;
+        }
+
+        try {
+            return Optional.of(
+                this.userDetailsService.loadUserByUsername(tokenSubject)
+            );
+        } catch (UsernameNotFoundException _) {
+            return Optional.empty();
+        }
     }
 }
