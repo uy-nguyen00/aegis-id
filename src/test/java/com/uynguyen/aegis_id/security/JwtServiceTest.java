@@ -121,6 +121,20 @@ class JwtServiceTest {
         }
 
         @Test
+        @DisplayName(
+            "Should reject refresh token when validating request access token"
+        )
+        void shouldRejectRefreshTokenForRequestAuthentication() {
+            final String userId = "0195f40f-56bd-78fd-b74d-a0eb9aa48612";
+            final String refreshToken = jwtService.generateRefreshToken(
+                userId,
+                List.of("ROLE_USER")
+            );
+
+            assertFalse(jwtService.isTokenValid(refreshToken, userId));
+        }
+
+        @Test
         @DisplayName("Should refresh access token from a valid refresh token")
         void shouldRefreshAccessToken() {
             final List<String> roles = List.of("ROLE_USER");

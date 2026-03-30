@@ -25,6 +25,8 @@ public class JwtService {
 
     private static final String TOKEN_TYPE = "token_type";
     private static final String ROLES_CLAIM = "roles";
+    private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
+    private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
 
     private final PrivateKey privateKey;
     private final PublicKey publicKey;
@@ -89,7 +91,7 @@ public class JwtService {
         final List<String> roles
     ) {
         final Map<String, Object> claims = new HashMap<>();
-        claims.put(TOKEN_TYPE, "ACCESS_TOKEN");
+        claims.put(TOKEN_TYPE, ACCESS_TOKEN);
         claims.put(ROLES_CLAIM, roles);
         return buildToken(userId, claims, this.accessTokenExpiration);
     }
@@ -99,7 +101,7 @@ public class JwtService {
         final List<String> roles
     ) {
         final Map<String, Object> claims = new HashMap<>();
-        claims.put(TOKEN_TYPE, "REFRESH_TOKEN");
+        claims.put(TOKEN_TYPE, REFRESH_TOKEN);
         claims.put(ROLES_CLAIM, roles);
         return buildToken(userId, claims, this.refreshTokenExpiration);
     }
@@ -126,8 +128,14 @@ public class JwtService {
         final String token,
         final String expectedUserId
     ) {
-        final String userId = extractUserIdFromToken(token);
-        return userId.equals(expectedUserId) && !isTokenExpired(token);
+        final Claims claims = extractClaims(token);
+        final String userId = claims.getSubject();
+        final String tokenType = claims.get(TOKEN_TYPE, String.class);
+
+        return
+            expectedUserId.equals(userId) &&
+            ACCESS_TOKEN.equals(tokenType) &&
+            !claims.getExpiration().before(new Date());
     }
 
     private boolean isTokenExpired(final String token) {
@@ -161,7 +169,7 @@ public class JwtService {
     public String refreshAccessToken(final String refreshToken) {
         final Claims claims = extractClaims(refreshToken);
 
-        if (!"REFRESH_TOKEN".equals(claims.get(TOKEN_TYPE))) {
+        if (!REFRESH_TOKEN.equals(claims.get(TOKEN_TYPE))) {
             throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
 
