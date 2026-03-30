@@ -152,7 +152,7 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-        } catch (final JwtException e) {
+        } catch (final JwtException _) {
             throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
     }
@@ -161,12 +161,12 @@ public class JwtService {
     public String refreshAccessToken(final String refreshToken) {
         final Claims claims = extractClaims(refreshToken);
 
-        if (!claims.get(TOKEN_TYPE).equals("REFRESH_TOKEN")) {
-            throw new RuntimeException("Invalid token type");
+        if (!"REFRESH_TOKEN".equals(claims.get(TOKEN_TYPE))) {
+            throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
 
         if (isTokenExpired(refreshToken)) {
-            throw new RuntimeException("Refresh token expired");
+            throw new BusinessException(ErrorCode.INVALID_JWT_TOKEN);
         }
 
         final String username = claims.getSubject();
