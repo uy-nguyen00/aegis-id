@@ -26,6 +26,6 @@ springdoc:
 app:
     security:
         jwt:
-            access-token-expiration: 86400000 # 24 hours for local testing, 15mins are recommended for prod
-            refresh-token-expiration: 604800000
+            access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
+            refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
         disposable-email-domains: 10minutemail,20minutemail,33mail,5ymail,anonbox,guerrillamail,mailinator,maildrop,mailnesia,moakt,my10minutemail,throwawaymail,trashmail,temp-mail,tempmail,truemail,yopmail

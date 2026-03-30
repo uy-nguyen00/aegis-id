@@ -1,4 +1,4 @@
-# JWT Spring Security
+# Aegis ID
 
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
@@ -31,6 +31,10 @@ DB_PASSWORD=postgres
 # JWT RSA Keys (Base64-encoded DER format)
 JWT_PRIVATE_KEY=<your-base64-encoded-private-key>
 JWT_PUBLIC_KEY=<your-base64-encoded-public-key>
+
+# JWT token expiration (milliseconds)
+JWT_ACCESS_TOKEN_EXPIRATION=900000
+JWT_REFRESH_TOKEN_EXPIRATION=604800000
 ```
 
 Adjust the values as needed for your environment.
@@ -55,23 +59,27 @@ Copy the output of each command into your `.env` file as `JWT_PRIVATE_KEY` and `
 
 For CI/CD, store the Base64 values as secrets (`JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY`) in your GitHub repository settings and reference them in the workflow environment.
 
-### 3. Start Infrastructure
+### 3. Start Services
 
-Use Docker Compose to start the PostgreSQL database and pgAdmin:
+Use Docker Compose to build and start the full stack (PostgreSQL, app, and pgAdmin):
 
 ```sh
-docker compose up -d
+docker compose up -d --build
 ```
 
+- **Application**: Port `8080`
 - **PostgreSQL**: Port `5432`
 - **pgAdmin**: Port `5050` (Login: `admin@admin.com` / `root`)
 
 ## Running the Application
 
-Run the Spring Boot application using the Maven Wrapper:
+The application runs in Docker as the `app` service.
+
+Useful commands:
 
 ```sh
-./mvnw spring-boot:run
+docker compose logs -f app
+docker compose down
 ```
 
 By default, the application runs on `http://localhost:8080`.

@@ -23,8 +23,8 @@ app:
         jwt:
             private-key: ${JWT_PRIVATE_KEY}
             public-key: ${JWT_PUBLIC_KEY}
-            access-token-expiration: 86400000 # 24 hours for local testing, 15mins are recommended for prod
-            refresh-token-expiration: 604800000
+            access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:86400000}
+            refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
             issuer: ${JWT_ISSUER:aegis-id}
             audience: ${JWT_AUDIENCE:aegis-api}
         disposable-email-domains: 10minutemail,20minutemail,33mail,5ymail,anonbox,guerrillamail,mailinator,maildrop,mailnesia,moakt,my10minutemail,throwawaymail,trashmail,temp-mail,tempmail,truemail,yopmail
