@@ -13,10 +13,12 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,7 @@ public class JwtService {
 
     private final PrivateKey privateKey;
     private final PublicKey publicKey;
+    private final AtomicBoolean includeRolesClaim;
 
     @Value("${app.security.jwt.access-token-expiration}")
     private long accessTokenExpiration;
@@ -45,8 +48,12 @@ public class JwtService {
 
     public JwtService(
         @Value("${app.security.jwt.private-key}") String privateKeyBase64,
-        @Value("${app.security.jwt.public-key}") String publicKeyBase64
+        @Value("${app.security.jwt.public-key}") String publicKeyBase64,
+        @Value(
+            "${app.security.jwt.include-roles-claim:false}"
+        ) boolean includeRolesClaim
     ) {
+        this.includeRolesClaim = new AtomicBoolean(includeRolesClaim);
         final KeyFactory keyFactory;
         try {
             keyFactory = KeyFactory.getInstance("RSA");
@@ -92,7 +99,9 @@ public class JwtService {
     ) {
         final Map<String, Object> claims = new HashMap<>();
         claims.put(TOKEN_TYPE, ACCESS_TOKEN);
-        claims.put(ROLES_CLAIM, roles);
+        if (this.includeRolesClaim.get()) {
+            claims.put(ROLES_CLAIM, roles);
+        }
         return buildToken(userId, claims, this.accessTokenExpiration);
     }
 
@@ -102,7 +111,9 @@ public class JwtService {
     ) {
         final Map<String, Object> claims = new HashMap<>();
         claims.put(TOKEN_TYPE, REFRESH_TOKEN);
-        claims.put(ROLES_CLAIM, roles);
+        if (this.includeRolesClaim.get()) {
+            claims.put(ROLES_CLAIM, roles);
+        }
         return buildToken(userId, claims, this.refreshTokenExpiration);
     }
 
@@ -132,10 +143,11 @@ public class JwtService {
         final String userId = claims.getSubject();
         final String tokenType = claims.get(TOKEN_TYPE, String.class);
 
-        return
+        return (
             expectedUserId.equals(userId) &&
             ACCESS_TOKEN.equals(tokenType) &&
-            !claims.getExpiration().before(new Date());
+            !claims.getExpiration().before(new Date())
+        );
     }
 
     private boolean isTokenExpired(final String token) {
@@ -148,7 +160,11 @@ public class JwtService {
 
     @SuppressWarnings("unchecked")
     public List<String> extractRolesFromToken(String token) {
-        return extractClaims(token).get(ROLES_CLAIM, List.class);
+        final List<String> roles = extractClaims(token).get(
+            ROLES_CLAIM,
+            List.class
+        );
+        return roles != null ? roles : Collections.emptyList();
     }
 
     private Claims extractClaims(String token) {
@@ -179,6 +195,17 @@ public class JwtService {
 
         final String userId = claims.getSubject();
         final List<String> roles = claims.get(ROLES_CLAIM, List.class);
-        return generateAccessToken(userId, roles);
+        return generateAccessToken(
+            userId,
+            roles != null ? roles : Collections.emptyList()
+        );
+    }
+
+    public boolean isIncludeRolesClaim() {
+        return this.includeRolesClaim.get();
+    }
+
+    public void setIncludeRolesClaim(boolean includeRolesClaim) {
+        this.includeRolesClaim.set(includeRolesClaim);
     }
 }

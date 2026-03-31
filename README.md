@@ -1,6 +1,6 @@
 # Aegis ID
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=uy-nguyen00_aegis-id&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=uy-nguyen00_aegis-id) 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=uy-nguyen00_aegis-id&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=uy-nguyen00_aegis-id)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
 This project implements JWT-based authentication using Spring Security, Spring Boot 4 and Java 25.
@@ -36,6 +36,12 @@ JWT_PUBLIC_KEY=<your-base64-encoded-public-key>
 # JWT token expiration (milliseconds)
 JWT_ACCESS_TOKEN_EXPIRATION=900000
 JWT_REFRESH_TOKEN_EXPIRATION=604800000
+
+# JWT roles claim toggle (optional, default: false)
+JWT_INCLUDE_ROLES_CLAIM=false
+
+# Management server port (Actuator endpoints, default: 8081)
+MANAGEMENT_PORT=8081
 ```
 
 Adjust the values as needed for your environment.
@@ -69,6 +75,7 @@ docker compose up -d --build
 ```
 
 - **Application**: Port `8080`
+- **Management (Actuator)**: Port `8081`
 - **PostgreSQL**: Port `5432`
 - **pgAdmin**: Port `5050` (Login: `admin@admin.com` / `root`)
 
@@ -92,3 +99,13 @@ Run the tests using the command line:
 ```sh
 ./mvnw test
 ```
+
+## Management Endpoints
+
+Actuator endpoints run on a **separate management port** (`8081` by default) and are not exposed through the main application port. Do not expose the management port publicly in production — secure it at the network level.
+
+| Endpoint | Method | Description |
+| ---------- | -------- | ------------- |
+| `/actuator/health` | GET | Application health check |
+| `/actuator/jwtconfig` | GET | Read current JWT configuration (e.g., `includeRolesClaim`) |
+| `/actuator/jwtconfig` | POST | Update JWT configuration at runtime (body: `{"includeRolesClaim": true}`) |

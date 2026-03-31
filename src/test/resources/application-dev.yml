@@ -25,3 +25,4 @@ app:
             refresh-token-expiration: 604800000
             issuer: aegis-id
             audience: aegis-api
+            include-roles-claim: true

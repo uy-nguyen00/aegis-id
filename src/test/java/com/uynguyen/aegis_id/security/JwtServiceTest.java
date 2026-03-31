@@ -41,7 +41,8 @@ class JwtServiceTest {
 
         this.jwtService = new JwtService(
             this.privateKeyBase64,
-            this.publicKeyBase64
+            this.publicKeyBase64,
+            true
         );
         ReflectionTestUtils.setField(
             this.jwtService,
@@ -68,7 +69,7 @@ class JwtServiceTest {
         void shouldThrowWhenPrivateKeyIsInvalid() {
             final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new JwtService("not-base64", publicKeyBase64)
+                () -> new JwtService("not-base64", publicKeyBase64, true)
             );
 
             assertTrue(
@@ -83,7 +84,7 @@ class JwtServiceTest {
         void shouldThrowWhenPublicKeyIsInvalid() {
             final IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> new JwtService(privateKeyBase64, "not-base64")
+                () -> new JwtService(privateKeyBase64, "not-base64", true)
             );
 
             assertTrue(
@@ -194,7 +195,8 @@ class JwtServiceTest {
         void shouldThrowWhenRefreshTokenIsExpired() {
             final JwtService expiredJwtService = new JwtService(
                 privateKeyBase64,
-                publicKeyBase64
+                publicKeyBase64,
+                true
             );
             ReflectionTestUtils.setField(
                 expiredJwtService,
@@ -225,6 +227,95 @@ class JwtServiceTest {
             );
 
             assertEquals(ErrorCode.INVALID_JWT_TOKEN, exception.getErrorCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("Roles Claim Toggle Tests")
+    class RolesClaimToggleTests {
+
+        @Test
+        @DisplayName("Should include roles claim when toggle is on")
+        void shouldIncludeRolesClaimWhenToggleOn() {
+            jwtService.setIncludeRolesClaim(true);
+            final List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
+            final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
+
+            final String token = jwtService.generateAccessToken(userId, roles);
+
+            assertEquals(roles, jwtService.extractRolesFromToken(token));
+        }
+
+        @Test
+        @DisplayName("Should exclude roles claim when toggle is off")
+        void shouldExcludeRolesClaimWhenToggleOff() {
+            jwtService.setIncludeRolesClaim(false);
+            final List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
+            final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
+
+            final String token = jwtService.generateAccessToken(userId, roles);
+
+            assertTrue(jwtService.extractRolesFromToken(token).isEmpty());
+        }
+
+        @Test
+        @DisplayName(
+            "Should exclude roles from refresh token when toggle is off"
+        )
+        void shouldExcludeRolesFromRefreshTokenWhenToggleOff() {
+            jwtService.setIncludeRolesClaim(false);
+            final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
+
+            final String refreshToken = jwtService.generateRefreshToken(
+                userId,
+                List.of("ROLE_USER")
+            );
+
+            assertTrue(
+                jwtService.extractRolesFromToken(refreshToken).isEmpty()
+            );
+        }
+
+        @Test
+        @DisplayName("Should refresh access token when roles claim is absent")
+        void shouldRefreshAccessTokenWithoutRolesClaim() {
+            jwtService.setIncludeRolesClaim(false);
+            final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
+
+            final String refreshToken = jwtService.generateRefreshToken(
+                userId,
+                List.of("ROLE_USER")
+            );
+            final String newAccessToken = jwtService.refreshAccessToken(
+                refreshToken
+            );
+
+            assertNotNull(newAccessToken);
+            assertTrue(jwtService.isTokenValid(newAccessToken, userId));
+            assertTrue(
+                jwtService.extractRolesFromToken(newAccessToken).isEmpty()
+            );
+        }
+
+        @Test
+        @DisplayName("Should toggle roles claim at runtime")
+        void shouldToggleAtRuntime() {
+            final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
+            final List<String> roles = List.of("ROLE_USER");
+
+            jwtService.setIncludeRolesClaim(false);
+            final String tokenOff = jwtService.generateAccessToken(
+                userId,
+                roles
+            );
+            assertTrue(jwtService.extractRolesFromToken(tokenOff).isEmpty());
+
+            jwtService.setIncludeRolesClaim(true);
+            final String tokenOn = jwtService.generateAccessToken(
+                userId,
+                roles
+            );
+            assertEquals(roles, jwtService.extractRolesFromToken(tokenOn));
         }
     }
 

@@ -27,4 +27,12 @@ app:
             refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
             issuer: ${JWT_ISSUER:aegis-id}
             audience: ${JWT_AUDIENCE:aegis-api}
+            include-roles-claim: ${JWT_INCLUDE_ROLES_CLAIM:false}
         disposable-email-domains: 10minutemail,20minutemail,33mail,5ymail,anonbox,guerrillamail,mailinator,maildrop,mailnesia,moakt,my10minutemail,throwawaymail,trashmail,temp-mail,tempmail,truemail,yopmail
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,jwtconfig
+    server:
+        port: ${MANAGEMENT_PORT:8081}
