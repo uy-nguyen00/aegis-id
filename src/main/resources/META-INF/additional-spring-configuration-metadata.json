@@ -34,6 +34,12 @@
       "name": "app.security.disposable-email-domains",
       "type": "java.lang.String",
       "description": "Comma-separated list of disposable email domains blocked at registration."
+    },
+    {
+      "name": "app.security.jwt.include-roles-claim",
+      "type": "java.lang.Boolean",
+      "description": "Whether to include user roles in JWT access and refresh token claims. Defaults to false. Toggleable at runtime via the /actuator/jwtconfig endpoint.",
+      "defaultValue": false
     }
   ]
 }

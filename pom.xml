@@ -218,6 +218,7 @@
 
 									<excludes>
 										<exclude>**/*Application.java</exclude>
+										<exclude>**/JwtConfigEndpoint.java</exclude>
 									</excludes>
 								</configuration>
 							</execution>

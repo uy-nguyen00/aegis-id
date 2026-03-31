@@ -25,6 +25,7 @@ services:
             dockerfile: Dockerfile
         ports:
             - "8080:8080"
+            - "8081:8081"
         environment:
             APP_NAME: ${APP_NAME}
             SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
@@ -37,6 +38,8 @@ services:
             JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
             JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION}
             JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION}
+            JWT_INCLUDE_ROLES_CLAIM: ${JWT_INCLUDE_ROLES_CLAIM:-false}
+            MANAGEMENT_PORT: ${MANAGEMENT_PORT:-8081}
         depends_on:
             postgres:
                 condition: service_healthy
