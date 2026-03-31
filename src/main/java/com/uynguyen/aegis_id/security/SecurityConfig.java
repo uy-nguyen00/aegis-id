@@ -3,8 +3,10 @@ package com.uynguyen.aegis_id.security;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -34,7 +36,11 @@ public class SecurityConfig {
         "/configuration/security",
         "/swagger-ui/**",
         "/webjars/**",
-        "/swagger-ui.html",
+        "/swagger-ui.html"
+    );
+
+    private static final List<String> DEV_PUBLIC_URLS = List.of(
+        "/",
         "/index.html",
         "/css/**",
         "/js/**"
@@ -44,10 +50,42 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
     @Bean
+    @Order(1)
+    public SecurityFilterChain actuatorFilterChain(
+        final HttpSecurity http,
+        @Value("${management.server.port:8081}") int managementPort
+    ) {
+        try {
+            return http
+                .securityMatcher(
+                    request -> request.getLocalPort() == managementPort
+                )
+                .authorizeHttpRequests(auth ->
+                    auth
+                        .requestMatchers("/actuator/**")
+                        .permitAll()
+                        .anyRequest()
+                        .denyAll()
+                )
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sess ->
+                    sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .build();
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                "Failed to build actuator security filter chain",
+                e
+            );
+        }
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(final HttpSecurity http) {
         List<String> publicUrls = new ArrayList<>(BASE_PUBLIC_URLS);
         if (environment.acceptsProfiles(Profiles.of("dev"))) {
-            publicUrls.add("/");
+            publicUrls.addAll(DEV_PUBLIC_URLS);
         }
 
         try {

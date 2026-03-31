@@ -44,4 +44,27 @@ class SecurityConfigUnitTest {
         assertNotNull(exception.getCause());
         assertTrue(exception.getCause() instanceof NullPointerException);
     }
+
+    @Test
+    @DisplayName(
+        "Should wrap internal failures when building actuator security filter chain"
+    )
+    void shouldWrapInternalFailuresWhenBuildingActuatorFilterChain() {
+        SecurityConfig securityConfig = new SecurityConfig(
+            environment,
+            jwtFilter
+        );
+
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> securityConfig.actuatorFilterChain(null, 8081)
+        );
+
+        assertEquals(
+            "Failed to build actuator security filter chain",
+            exception.getMessage()
+        );
+        assertNotNull(exception.getCause());
+        assertTrue(exception.getCause() instanceof NullPointerException);
+    }
 }
