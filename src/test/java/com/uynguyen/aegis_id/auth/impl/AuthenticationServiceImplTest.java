@@ -12,14 +12,10 @@ import com.uynguyen.aegis_id.auth.request.RegistrationRequest;
 import com.uynguyen.aegis_id.auth.response.AuthenticationResponse;
 import com.uynguyen.aegis_id.exception.BusinessException;
 import com.uynguyen.aegis_id.exception.ErrorCode;
-import com.uynguyen.aegis_id.role.Role;
-import com.uynguyen.aegis_id.role.RoleRepository;
 import com.uynguyen.aegis_id.security.JwtService;
 import com.uynguyen.aegis_id.user.User;
 import com.uynguyen.aegis_id.user.UserMapper;
 import com.uynguyen.aegis_id.user.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,9 +42,6 @@ class AuthenticationServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private RoleRepository roleRepository;
-
-    @Mock
     private UserMapper userMapper;
 
     @InjectMocks
@@ -68,9 +61,6 @@ class AuthenticationServiceImplTest {
             when(request.getPassword()).thenReturn("password");
             when(request.getConfirmPassword()).thenReturn("password");
 
-            Role role = new Role();
-            role.setName("ROLE_USER");
-
             User user = new User();
             user.setId("user-id");
             user.setEmail("test@example.com");
@@ -81,9 +71,6 @@ class AuthenticationServiceImplTest {
             when(userRepository.existsByPhoneNumber(anyString())).thenReturn(
                 false
             );
-            when(roleRepository.findByName("ROLE_USER")).thenReturn(
-                Optional.of(role)
-            );
             when(userMapper.toUser(any(RegistrationRequest.class))).thenReturn(
                 user
             );
@@ -93,7 +80,8 @@ class AuthenticationServiceImplTest {
 
             // Then
             verify(userRepository).save(user);
-            verify(roleRepository).findByName("ROLE_USER");
+            assertNotNull(user.getRoles());
+            assertTrue(user.getRoles().isEmpty());
         }
 
         @Test
@@ -179,36 +167,6 @@ class AuthenticationServiceImplTest {
                 ErrorCode.PASSWORDS_MISMATCH,
                 exception.getErrorCode()
             );
-            verify(userRepository, never()).save(any());
-        }
-
-        @Test
-        @DisplayName(
-            "Should throw EntityNotFoundException when ROLE_USER does not exist"
-        )
-        void shouldThrowExceptionWhenRoleNotFound() {
-            // Given
-            RegistrationRequest request = mock(RegistrationRequest.class);
-            when(request.getEmail()).thenReturn("test@example.com");
-            when(request.getPhoneNumber()).thenReturn("1234567890");
-            when(request.getPassword()).thenReturn("password");
-            when(request.getConfirmPassword()).thenReturn("password");
-
-            when(
-                userRepository.existsByEmailIgnoreCase(anyString())
-            ).thenReturn(false);
-            when(userRepository.existsByPhoneNumber(anyString())).thenReturn(
-                false
-            );
-            when(roleRepository.findByName("ROLE_USER")).thenReturn(
-                Optional.empty()
-            );
-
-            // When & Then
-            assertThrows(EntityNotFoundException.class, () ->
-                authenticationService.register(request)
-            );
-
             verify(userRepository, never()).save(any());
         }
     }

@@ -7,15 +7,11 @@ import com.uynguyen.aegis_id.auth.request.RegistrationRequest;
 import com.uynguyen.aegis_id.auth.response.AuthenticationResponse;
 import com.uynguyen.aegis_id.exception.BusinessException;
 import com.uynguyen.aegis_id.exception.ErrorCode;
-import com.uynguyen.aegis_id.role.Role;
-import com.uynguyen.aegis_id.role.RoleRepository;
 import com.uynguyen.aegis_id.security.JwtService;
 import com.uynguyen.aegis_id.user.User;
 import com.uynguyen.aegis_id.user.UserMapper;
 import com.uynguyen.aegis_id.user.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +29,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final UserMapper userMapper;
 
     @Override
@@ -43,17 +38,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         checkUserPhoneNumber(request.getPhoneNumber());
         checkPasswords(request.getPassword(), request.getConfirmPassword());
 
-        final Role userRole = this.roleRepository.findByName(
-            "ROLE_USER"
-        ).orElseThrow(() ->
-            new EntityNotFoundException("Role 'USER' does not exist")
-        );
-
-        List<Role> roles = new ArrayList<>();
-        roles.add(userRole);
-
         final User user = this.userMapper.toUser(request);
-        user.setRoles(roles);
         log.debug("Saving user {}", user);
         this.userRepository.save(user);
     }
