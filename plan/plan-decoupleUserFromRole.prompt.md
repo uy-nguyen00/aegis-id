@@ -19,55 +19,113 @@ Each phase includes its own tests.
 
 > **Why first?** `JwtFilter` already ignores JWT roles claims — it loads authorities from the database. The `roles` claim in the JWT is dead weight. Toggling it off changes nothing about how requests are authorized. This is the safest, most isolated change.
 
-**Implementation summary:**
+### 1.1 — Configuration property
 
-- Added `app.security.jwt.include-roles-claim` property (default: `false`, env var: `JWT_INCLUDE_ROLES_CLAIM`)
-- `JwtService` uses `AtomicBoolean` for thread-safe runtime toggling via getter/setter
-- `generateAccessToken()` / `generateRefreshToken()` conditionally include `roles` claim
-- `extractRolesFromToken()` returns empty list when claim is absent
-- `refreshAccessToken()` handles null roles gracefully
-- Custom Actuator endpoint `JwtConfigEndpoint` at `/actuator/jwtconfig` (read + write) for runtime toggle
-- Management server runs on separate port (`MANAGEMENT_PORT`, default: `8081`) — not exposed through main API, secured at network level
-- Dockerfile updated: health check now targets management port `8081`
-- 5 new tests in `JwtServiceTest` (`RolesClaimToggleTests` nested class)
-- All 146 tests pass
+- Added `app.security.jwt.include-roles-claim` in `application.yml`, bound to env var `JWT_INCLUDE_ROLES_CLAIM` (default: `false`)
+- Added `management.server.port` bound to env var `MANAGEMENT_PORT` (default: `8081`)
+- Exposed actuator endpoints: `health`, `jwtconfig` via `management.endpoints.web.exposure.include`
+- Registered the new property in `META-INF/additional-spring-configuration-metadata.json`
+- Test profile (`application-dev.yml`) sets `include-roles-claim: true` to keep existing test behavior
 
-**Files changed:**
+### 1.2 — JwtService toggle
 
-- `src/main/java/com/uynguyen/aegis_id/security/JwtService.java`
-- `src/main/java/com/uynguyen/aegis_id/security/JwtConfigEndpoint.java` — **NEW**
-- `src/main/resources/application.yml`
-- `src/test/resources/application-dev.yml`
-- `src/test/java/com/uynguyen/aegis_id/security/JwtServiceTest.java`
-- `Dockerfile`
+- Added `AtomicBoolean includeRolesClaim` field — thread-safe for runtime switching
+- Constructor takes a third parameter `boolean includeRolesClaim` (injected from config)
+- `generateAccessToken()` — only adds `claims.put(ROLES_CLAIM, roles)` when `includeRolesClaim.get()` is `true`
+- `generateRefreshToken()` — same conditional logic
+- `extractRolesFromToken()` — returns `Collections.emptyList()` when claim is `null` (absent)
+- `refreshAccessToken()` — extracts roles from refresh token with null guard (`roles != null ? roles : Collections.emptyList()`), then delegates to `generateAccessToken()` which re-applies the toggle
+- Added `isIncludeRolesClaim()` / `setIncludeRolesClaim(boolean)` for runtime control
+
+### 1.3 — Custom Actuator endpoint
+
+- New class `JwtConfigEndpoint` — `@Endpoint(id = "jwtconfig")` component
+- `@ReadOperation` (GET `/actuator/jwtconfig`) — returns `{"includeRolesClaim": true/false}`
+- `@WriteOperation` (POST `/actuator/jwtconfig`) — accepts `boolean includeRolesClaim`, updates toggle, returns new state
+- Excluded from JaCoCo coverage in `pom.xml` (pure delegation, no branching logic)
+
+### 1.4 — Management port separation and security
+
+- Actuator endpoints served on port `8081` (configurable via `MANAGEMENT_PORT`), not exposed through main API port `8080`
+- Added dedicated `SecurityFilterChain` (`@Order(1)`) in `SecurityConfig`:
+    - `securityMatcher` uses `request.getLocalPort() == managementPort` to scope to management port only
+    - `/actuator/**` → `permitAll()`
+    - Everything else on port 8081 → `denyAll()` (prevents Swagger, login form, etc. from being served on management port)
+    - CSRF disabled (stateless, no cookies — SonarQube S4502 hotspot reviewed as safe)
+    - Stateless session policy
+- Main filter chain (`@Order(2)`) unchanged in behavior
+- Static resource URLs (`/`, `/index.html`, `/css/**`, `/js/**`) moved from `BASE_PUBLIC_URLS` to `DEV_PUBLIC_URLS` — now only accessible in dev profile on port 8080
+
+### 1.5 — Infrastructure updates
+
+- `Dockerfile` — updated `EXPOSE 8080 8081`, health check targets `http://localhost:8081/actuator/health`
+- `docker-compose.yml` — added port mapping `8081:8081`, added `JWT_INCLUDE_ROLES_CLAIM` and `MANAGEMENT_PORT` env vars
+- `.env.example` — added `JWT_INCLUDE_ROLES_CLAIM` and `MANAGEMENT_PORT` entries
+- `README.md` — documented management port, env vars, and actuator endpoint table
+
+### 1.6 — Tests
+
+- Updated all `new JwtService(...)` calls in `JwtServiceTest` to 3-arg constructor with `true`
+- Added `@Nested` class `RolesClaimToggleTests` with 5 tests:
+    1. `shouldIncludeRolesClaimWhenToggleOn` — verifies roles present in JWT when toggle is on
+    2. `shouldExcludeRolesClaimWhenToggleOff` — verifies roles absent when toggle is off
+    3. `shouldExcludeRolesFromRefreshTokenWhenToggleOff` — verifies refresh token also excludes roles
+    4. `shouldRefreshAccessTokenWithoutRolesClaim` — verifies refresh flow works when roles claim is absent
+    5. `shouldToggleAtRuntime` — verifies `setIncludeRolesClaim()` switches behavior without restart
+- Added test for actuator filter chain error wrapping in `SecurityConfigUnitTest`
+- All 147 tests pass
+
+### Files changed
+
+- `src/main/java/com/uynguyen/aegis_id/security/JwtService.java` — toggle logic
+- `src/main/java/com/uynguyen/aegis_id/security/JwtConfigEndpoint.java` — **NEW**: Actuator endpoint
+- `src/main/java/com/uynguyen/aegis_id/security/SecurityConfig.java` — actuator filter chain, dev-only static URLs
+- `src/main/resources/application.yml` — new properties
+- `src/main/resources/META-INF/additional-spring-configuration-metadata.json` — new property metadata
+- `src/test/resources/application-dev.yml` — `include-roles-claim: true`
+- `src/test/java/com/uynguyen/aegis_id/security/JwtServiceTest.java` — 5 new toggle tests
+- `src/test/java/com/uynguyen/aegis_id/security/SecurityConfigUnitTest.java` — actuator chain test
+- `Dockerfile` — health check port, expose 8081
+- `docker-compose.yml` — port mapping, env vars
+- `.env.example` — new env vars
+- `README.md` — management endpoints documentation
+- `pom.xml` — JaCoCo exclusion for `JwtConfigEndpoint`
 
 ---
 
-## Phase 2: Decouple Registration from Role
+## Phase 2: Decouple Registration from Role ✅ DONE
 
-### Step 2.1 — Remove hard-coded role assignment from registration
+> **Why second?** It removes the hard `ROLE_USER` dependency while keeping authentication behavior stable. Users can exist with zero roles and still sign in.
 
-- In `AuthenticationServiceImpl.register()`:
-    - Remove the `roleRepository.findByName("ROLE_USER")` lookup
-    - Remove the role list creation and `user.setRoles(roles)`
-    - Let user be saved with an empty roles list (or null → empty)
-    - Remove the `RoleRepository` dependency from `AuthenticationServiceImpl` if no longer needed
+### 2.1 — Registration flow decoupled
 
-### Step 2.2 — Verify User.getAuthorities() handles empty roles
+- Removed `RoleRepository` from `AuthenticationServiceImpl`
+- Removed `ROLE_USER` lookup and role assignment from `register()`
+- Registration now saves the mapped user directly
+- `User.roles` defaults to empty via `@Builder.Default`, so new users start without roles
 
-- Already confirmed: `User.getAuthorities()` returns `List.of()` when roles is empty — no change needed
+### 2.2 — Authorities behavior with empty roles
 
-### Step 2.3 — Tests
+- Confirmed unchanged: `User.getAuthorities()` returns `List.of()` when roles is empty
 
-- Remove test that expects `EntityNotFoundException` when `ROLE_USER` doesn't exist
-- Update `register_successfully` test to not mock `roleRepository.findByName()`
-- Verify user is saved without roles
+### 2.3 — Tests
 
-### Step 2.4 — Verification
+- Removed the register test case expecting failure when `ROLE_USER` is missing
+- Updated register-success test to remove role repository stubbing
+- Verified saved user has initialized, empty roles
+- Targeted suite passed: `AuthenticationServiceImplTest` (8 tests, 0 failures, 0 errors)
 
-1. Register a user → saved with empty roles
-2. Login with that user → succeeds (JWT issued, no roles in token if toggle is off)
-3. All existing tests pass
+### 2.4 — Verification
+
+1. Register user → persisted with empty roles
+2. Login still succeeds for user with zero roles
+3. Full suite passed: 146 tests, 0 failures, 0 errors
+
+### Files changed
+
+- `src/main/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImpl.java` — removed role lookup/assignment from `register()`
+- `src/test/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImplTest.java` — updated registration tests for role-free registration
+- `src/main/java/com/uynguyen/aegis_id/user/User.java` — ensured roles are initialized by default for builder-created users
 
 ---
 

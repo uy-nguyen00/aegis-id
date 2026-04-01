@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import java.io.Serializable;
 import java.util.List;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -17,7 +18,9 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 @Table(name = "ROLES")
-public class Role extends BaseEntity {
+public class Role extends BaseEntity implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Column(name = "NAME", nullable = false)
     private String name;

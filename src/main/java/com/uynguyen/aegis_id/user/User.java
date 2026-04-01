@@ -4,6 +4,7 @@ import com.uynguyen.aegis_id.role.Role;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import lombok.*;
@@ -83,7 +84,8 @@ public class User implements UserDetails {
         joinColumns = { @JoinColumn(name = "USER_ID") },
         inverseJoinColumns = { @JoinColumn(name = "ROLE_ID") }
     )
-    private List<Role> roles;
+    @Builder.Default
+    private List<Role> roles = new ArrayList<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
