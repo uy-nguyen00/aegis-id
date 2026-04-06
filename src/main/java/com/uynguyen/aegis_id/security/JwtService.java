@@ -27,6 +27,7 @@ public class JwtService {
 
     private static final String TOKEN_TYPE = "token_type";
     private static final String ROLES_CLAIM = "roles";
+    private static final String FULL_NAME_CLAIM = "full_name";
     private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
     private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
 
@@ -95,26 +96,69 @@ public class JwtService {
 
     public String generateAccessToken(
         final String userId,
-        final List<String> roles
+        final List<String> roles,
+        final String firstName,
+        final String lastName
     ) {
         final Map<String, Object> claims = new HashMap<>();
         claims.put(TOKEN_TYPE, ACCESS_TOKEN);
         if (this.includeRolesClaim.get()) {
             claims.put(ROLES_CLAIM, roles);
         }
+        addFullNameClaim(claims, firstName, lastName);
         return buildToken(userId, claims, this.accessTokenExpiration);
     }
 
     public String generateRefreshToken(
         final String userId,
-        final List<String> roles
+        final List<String> roles,
+        final String firstName,
+        final String lastName
     ) {
         final Map<String, Object> claims = new HashMap<>();
         claims.put(TOKEN_TYPE, REFRESH_TOKEN);
         if (this.includeRolesClaim.get()) {
             claims.put(ROLES_CLAIM, roles);
         }
+        addFullNameClaim(claims, firstName, lastName);
         return buildToken(userId, claims, this.refreshTokenExpiration);
+    }
+
+    private void addFullNameClaim(
+        final Map<String, Object> claims,
+        final String firstName,
+        final String lastName
+    ) {
+        final String fullName = buildFullName(firstName, lastName);
+        if (!fullName.isEmpty()) {
+            claims.put(FULL_NAME_CLAIM, fullName);
+        }
+    }
+
+    private String buildFullName(
+        final String firstName,
+        final String lastName
+    ) {
+        final String normalizedFirstName = normalizeNamePart(firstName);
+        final String normalizedLastName = normalizeNamePart(lastName);
+
+        if (normalizedFirstName.isEmpty()) {
+            return normalizedLastName;
+        }
+
+        if (normalizedLastName.isEmpty()) {
+            return normalizedFirstName;
+        }
+
+        return normalizedFirstName + " " + normalizedLastName;
+    }
+
+    private String normalizeNamePart(final String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.trim().replaceAll("\\s+", " ");
     }
 
     private String buildToken(
@@ -158,6 +202,10 @@ public class JwtService {
         return extractClaims(token).getSubject();
     }
 
+    public String extractFullNameFromToken(String token) {
+        return extractClaims(token).get(FULL_NAME_CLAIM, String.class);
+    }
+
     @SuppressWarnings("unchecked")
     public List<String> extractRolesFromToken(String token) {
         final List<String> roles = extractClaims(token).get(
@@ -195,9 +243,12 @@ public class JwtService {
 
         final String userId = claims.getSubject();
         final List<String> roles = claims.get(ROLES_CLAIM, List.class);
+        final String fullName = claims.get(FULL_NAME_CLAIM, String.class);
         return generateAccessToken(
             userId,
-            roles != null ? roles : Collections.emptyList()
+            roles != null ? roles : Collections.emptyList(),
+            fullName,
+            null
         );
     }
 

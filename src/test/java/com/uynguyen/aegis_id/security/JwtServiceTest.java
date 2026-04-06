@@ -3,6 +3,7 @@ package com.uynguyen.aegis_id.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -108,7 +109,9 @@ class JwtServiceTest {
 
             final String accessToken = jwtService.generateAccessToken(
                 userId,
-                roles
+                roles,
+                null,
+                null
             );
 
             assertNotNull(accessToken);
@@ -129,7 +132,9 @@ class JwtServiceTest {
             final String userId = "0195f40f-56bd-78fd-b74d-a0eb9aa48612";
             final String refreshToken = jwtService.generateRefreshToken(
                 userId,
-                List.of("ROLE_USER")
+                List.of("ROLE_USER"),
+                null,
+                null
             );
 
             assertFalse(jwtService.isTokenValid(refreshToken, userId));
@@ -142,7 +147,9 @@ class JwtServiceTest {
             final String userId = "0195f40f-56bd-78fd-b74d-a0eb9aa48612";
             final String refreshToken = jwtService.generateRefreshToken(
                 userId,
-                roles
+                roles,
+                null,
+                null
             );
 
             final String newAccessToken = jwtService.refreshAccessToken(
@@ -164,7 +171,9 @@ class JwtServiceTest {
         void shouldThrowWhenRefreshingWithAccessToken() {
             final String accessToken = jwtService.generateAccessToken(
                 "0195f410-0482-7f7c-9c5c-b93578cb2a9d",
-                List.of("ROLE_USER")
+                List.of("ROLE_USER"),
+                null,
+                null
             );
 
             final BusinessException exception = assertThrows(
@@ -218,7 +227,9 @@ class JwtServiceTest {
             final String expiredRefreshToken =
                 expiredJwtService.generateRefreshToken(
                     "0195f411-6937-75b4-aea2-a0820d643fe7",
-                    List.of("ROLE_USER")
+                    List.of("ROLE_USER"),
+                    null,
+                    null
                 );
 
             final BusinessException exception = assertThrows(
@@ -241,7 +252,12 @@ class JwtServiceTest {
             final List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
             final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
 
-            final String token = jwtService.generateAccessToken(userId, roles);
+            final String token = jwtService.generateAccessToken(
+                userId,
+                roles,
+                null,
+                null
+            );
 
             assertEquals(roles, jwtService.extractRolesFromToken(token));
         }
@@ -253,7 +269,12 @@ class JwtServiceTest {
             final List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
             final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
 
-            final String token = jwtService.generateAccessToken(userId, roles);
+            final String token = jwtService.generateAccessToken(
+                userId,
+                roles,
+                null,
+                null
+            );
 
             assertTrue(jwtService.extractRolesFromToken(token).isEmpty());
         }
@@ -268,7 +289,9 @@ class JwtServiceTest {
 
             final String refreshToken = jwtService.generateRefreshToken(
                 userId,
-                List.of("ROLE_USER")
+                List.of("ROLE_USER"),
+                null,
+                null
             );
 
             assertTrue(
@@ -284,7 +307,9 @@ class JwtServiceTest {
 
             final String refreshToken = jwtService.generateRefreshToken(
                 userId,
-                List.of("ROLE_USER")
+                List.of("ROLE_USER"),
+                null,
+                null
             );
             final String newAccessToken = jwtService.refreshAccessToken(
                 refreshToken
@@ -306,16 +331,112 @@ class JwtServiceTest {
             jwtService.setIncludeRolesClaim(false);
             final String tokenOff = jwtService.generateAccessToken(
                 userId,
-                roles
+                roles,
+                null,
+                null
             );
             assertTrue(jwtService.extractRolesFromToken(tokenOff).isEmpty());
 
             jwtService.setIncludeRolesClaim(true);
             final String tokenOn = jwtService.generateAccessToken(
                 userId,
-                roles
+                roles,
+                null,
+                null
             );
             assertEquals(roles, jwtService.extractRolesFromToken(tokenOn));
+        }
+    }
+
+    @Nested
+    @DisplayName("Full Name Claim Tests")
+    class FullNameClaimTests {
+
+        @Test
+        @DisplayName(
+            "Should include full name claim when first and last name are provided"
+        )
+        void shouldIncludeFullNameClaimWhenFirstAndLastNameAreProvided() {
+            final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
+
+            final String token = jwtService.generateAccessToken(
+                userId,
+                List.of("ROLE_USER"),
+                "John",
+                "Doe"
+            );
+
+            assertEquals(
+                "John Doe",
+                jwtService.extractFullNameFromToken(token)
+            );
+        }
+
+        @Test
+        @DisplayName(
+            "Should normalize full name claim when one name part is missing"
+        )
+        void shouldNormalizeFullNameClaimWhenOneNamePartIsMissing() {
+            final String userId = "0195f40f-56bd-78fd-b74d-a0eb9aa48612";
+
+            final String tokenWithOnlyLastName = jwtService.generateAccessToken(
+                userId,
+                List.of("ROLE_USER"),
+                "   ",
+                "  Doe  "
+            );
+            final String tokenWithOnlyFirstName =
+                jwtService.generateAccessToken(
+                    userId,
+                    List.of("ROLE_USER"),
+                    "  John  ",
+                    null
+                );
+
+            assertEquals(
+                "Doe",
+                jwtService.extractFullNameFromToken(tokenWithOnlyLastName)
+            );
+            assertEquals(
+                "John",
+                jwtService.extractFullNameFromToken(tokenWithOnlyFirstName)
+            );
+        }
+
+        @Test
+        @DisplayName("Should omit full name claim when both names are missing")
+        void shouldOmitFullNameClaimWhenBothNamesAreMissing() {
+            final String token = jwtService.generateAccessToken(
+                "0195f410-0482-7f7c-9c5c-b93578cb2a9d",
+                List.of("ROLE_USER"),
+                "   ",
+                null
+            );
+
+            assertNull(jwtService.extractFullNameFromToken(token));
+        }
+
+        @Test
+        @DisplayName(
+            "Should preserve full name claim when refreshing access token"
+        )
+        void shouldPreserveFullNameClaimWhenRefreshingAccessToken() {
+            final String userId = "0195f411-6937-75b4-aea2-a0820d643fe7";
+            final String refreshToken = jwtService.generateRefreshToken(
+                userId,
+                List.of("ROLE_USER"),
+                "  John  ",
+                "  Doe  "
+            );
+
+            final String newAccessToken = jwtService.refreshAccessToken(
+                refreshToken
+            );
+
+            assertEquals(
+                "John Doe",
+                jwtService.extractFullNameFromToken(newAccessToken)
+            );
         }
     }
 

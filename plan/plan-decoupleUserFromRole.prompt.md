@@ -2,14 +2,15 @@
 
 ## TL;DR
 
-Decouple User and Role so registration doesn't require roles, seed roles from environment variables on startup (auto-prefixed with `ROLE_`), make JWT roles claims toggleable via env var, provide admin endpoints for user-role assignment, and skip creating a RoleController for role CRUD (security risk with no current benefit).
+Decouple User and Role so registration doesn't require roles, inject user full name into JWT tokens, seed roles from environment variables on startup (auto-prefixed with `ROLE_`), make JWT roles claims toggleable via env var, provide admin endpoints for user-role assignment, and skip creating a RoleController for role CRUD (security risk with no current benefit).
 
 **Phase order** — prioritized by isolation and risk (safest first):
 
 1. **JWT roles claim toggle** — zero runtime impact (JwtFilter already loads roles from DB, not JWT)
 2. **Decouple registration** — removes hard `ROLE_USER` requirement
-3. **Role seeding from env vars** — new feature, no dependency on 1-2
-4. **Admin endpoints** — depends on roles being seeded
+3. **Inject full name claim into JWT** — claim-only change with no authorization impact
+4. **Role seeding from env vars** — new feature, no dependency on 1-3
+5. **Admin endpoints** — depends on roles being seeded
 
 Each phase includes its own tests.
 
@@ -129,19 +130,65 @@ Each phase includes its own tests.
 
 ---
 
-## Phase 3: Role Seeding from Environment Variables
+## Phase 3: Inject User Full Name into JWT Tokens ✅ DONE
 
-### Step 3.1 — Add configuration properties
+> **Why third?** This is a claim-only enhancement and does not affect authorization decisions (`JwtFilter` still loads authorities from DB). It is isolated from role seeding and admin endpoint work.
+
+### 3.1 — Token claim contract implemented
+
+- Added JWT claim key `full_name` in `JwtService`
+- Implemented full-name normalization:
+    - trim each name part
+    - collapse internal whitespace (`\s+` → single space)
+    - combine `firstName` + `lastName` with one space when both exist
+    - when only one part exists, use that part
+    - when both parts are empty/null, omit `full_name` claim
+- Added `extractFullNameFromToken()` for explicit claim assertions in tests
+
+### 3.2 — Token generation updated (breaking API by design)
+
+- `generateAccessToken(...)` now takes four arguments: `(userId, roles, firstName, lastName)`
+- `generateRefreshToken(...)` now takes four arguments: `(userId, roles, firstName, lastName)`
+- Removed backward-compatible 2-arg overloads intentionally (no compatibility layer)
+- Full-name claim remains independent from `include-roles-claim` toggle
+
+### 3.3 — Authentication and refresh flow wiring
+
+- `AuthenticationServiceImpl.login()` now passes `user.getFirstName()` and `user.getLastName()` to both token generation calls
+- `JwtService.refreshAccessToken()` now reads `full_name` from refresh token and preserves it when minting a new access token
+
+### 3.4 — Tests
+
+- Added `FullNameClaimTests` in `JwtServiceTest` with 4 cases:
+    1. include claim when both names are present
+    2. normalize/handle missing first or last name
+    3. omit claim when both names are empty/null
+    4. preserve claim across refresh-token → access-token flow
+- Updated `JwtServiceTest` existing token-generation calls to 4-arg signature
+- Updated `AuthenticationServiceImplTest` to:
+    - provide first/last name in login principal fixture
+    - verify `JwtService` is called with first/last name arguments
+
+### 3.5 — Verification
+
+1. Targeted validation passed: `JwtServiceTest` + `AuthenticationServiceImplTest` (25 tests, 0 failures)
+2. Full suite passed after signature change: 150 tests, 0 failures, 0 errors
+
+---
+
+## Phase 4: Role Seeding from Environment Variables
+
+### Step 4.1 — Add configuration properties
 
 - In `application.yml`, add:
     - `app.security.roles` — comma-separated list of role names (e.g., `USER,ADMIN` or `CREATOR,MEMBER`)
 - Maps to env var `APP_ROLES`
 
-### Step 3.2 — Add unique constraint to Role.name
+### Step 4.2 — Add unique constraint to Role.name
 
 - In `Role.java`, add `unique = true` to the `@Column(name = "NAME")` annotation to prevent duplicate roles at DB level
 
-### Step 3.3 — Create RoleInitializer component
+### Step 4.3 — Create RoleInitializer component
 
 - New class: `src/main/java/com/uynguyen/aegis_id/role/RoleInitializer.java`
 - Implements `ApplicationRunner`
@@ -153,7 +200,7 @@ Each phase includes its own tests.
 - Log each created/skipped role at INFO level
 - If `app.security.roles` is empty/missing, do nothing (no-op)
 
-### Step 3.4 — Role lifecycle: adding and removing roles
+### Step 4.4 — Role lifecycle: adding and removing roles
 
 **Adding a role:**
 
@@ -167,11 +214,11 @@ Each phase includes its own tests.
 - This is intentional: deleting a role would cascade to `USERS_ROLES`, silently stripping permissions from users
 - To decommission a role:
     1. Remove it from `APP_ROLES` (prevents re-creation on future deploys)
-    2. Use the admin endpoint (Phase 4) to unassign it from affected users
+    2. Use the admin endpoint (Phase 5) to unassign it from affected users
     3. Optionally delete the orphaned role row via a DB migration or manual operation
 - **Why not auto-sync/delete?** A typo in `APP_ROLES` (e.g., accidentally omitting `ADMIN`) would wipe that role from all users on next deploy. Additive-only is the safe default.
 
-### Step 3.5 — Bootstrap: first admin user
+### Step 4.5 — Bootstrap: first admin user
 
 - Add `app.security.admin-emails` config property (maps to env var `APP_ADMIN_EMAILS`)
 - Comma-separated list of email addresses that should receive the admin role on startup
@@ -179,10 +226,10 @@ Each phase includes its own tests.
     - If the user exists and doesn't already have the admin role → assign it
     - If the user doesn't exist yet → skip (they'll need to be assigned later via admin endpoint)
     - Admin role name is determined by convention: uses the first role in `APP_ROLES` that contains `ADMIN`, or a separate `app.security.admin-role` property if explicit control is needed
-- This solves the **chicken-and-egg problem**: admin endpoints (Phase 4) require an admin, but no admin exists without this bootstrap
+- This solves the **chicken-and-egg problem**: admin endpoints (Phase 5) require an admin, but no admin exists without this bootstrap
 - Log assignments at INFO level
 
-### Step 3.6 — Tests
+### Step 4.6 — Tests
 
 - Test: roles are created on startup when `app.security.roles` is configured
 - Test: existing roles are not duplicated
@@ -191,7 +238,7 @@ Each phase includes its own tests.
 - Test: admin bootstrap assigns admin role to configured emails
 - Test: admin bootstrap skips non-existent users gracefully
 
-### Step 3.7 — Verification
+### Step 4.7 — Verification
 
 1. Start app with `APP_ROLES=USER,ADMIN` → verify `ROLE_USER` and `ROLE_ADMIN` appear in ROLES table
 2. Start app with no `APP_ROLES` → no roles created, no errors
@@ -201,9 +248,9 @@ Each phase includes its own tests.
 
 ---
 
-## Phase 4: Admin Endpoints for User-Role Assignment
+## Phase 5: Admin Endpoints for User-Role Assignment
 
-### Step 4.1 — Add `RoleService`
+### Step 5.1 — Add `RoleService`
 
 - New class: `src/main/java/com/uynguyen/aegis_id/role/RoleService.java` (interface) + `impl/RoleServiceImpl.java`
 - Methods:
@@ -211,7 +258,7 @@ Each phase includes its own tests.
     - `List<Role> findAll()` — for listing available roles
 - Used by the admin endpoint and `RoleInitializer`
 
-### Step 4.2 — Add role assignment endpoints
+### Step 5.2 — Add role assignment endpoints
 
 - Add to `UserController` (or a new `AdminController` if separation is preferred):
     - **`PUT /api/v1/users/{userId}/roles`** — Replace all roles for a user. Request body: `{ "roles": ["ROLE_ADMIN", "ROLE_USER"] }`. Validates each role exists in the DB before assigning.
@@ -220,19 +267,19 @@ Each phase includes its own tests.
 - Returns `404` if user or role not found
 - Returns `403` if caller is not an admin
 
-### Step 4.3 — Self-demotion guard
+### Step 5.3 — Self-demotion guard
 
 - Prevent an admin from removing their own admin role via this endpoint
 - If `userId` matches the authenticated user and the request removes the admin role → reject with `400 Bad Request`
 - This prevents accidental lockout (last admin removes their own access)
 
-### Step 4.4 — Update SecurityConfig
+### Step 5.4 — Update SecurityConfig
 
 - `@EnableMethodSecurity` is already present
 - No URL-level role checks needed — `@PreAuthorize` on the controller methods is sufficient
 - Ensure `JwtFilter` / `User.getAuthorities()` correctly populates `ROLE_ADMIN` so `hasRole('ADMIN')` works
 
-### Step 4.5 — Tests
+### Step 5.5 — Tests
 
 - Test: admin can assign roles to a user
 - Test: admin can list a user's roles
@@ -241,7 +288,7 @@ Each phase includes its own tests.
 - Test: self-demotion guard rejects removing own admin role
 - Test: assigning roles to non-existent user returns `404`
 
-### Step 4.6 — Verification
+### Step 5.6 — Verification
 
 1. As admin, `PUT /api/v1/users/{userId}/roles` → roles are updated
 2. As non-admin, attempt same endpoint → `403`
@@ -267,7 +314,7 @@ Each phase includes its own tests.
 
 - `src/main/java/com/uynguyen/aegis_id/security/JwtService.java` — toggle roles claim on/off ✅
 - `src/main/java/com/uynguyen/aegis_id/security/JwtConfigEndpoint.java` — **NEW** ✅: Actuator endpoint for runtime toggle
-- `src/main/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImpl.java` — remove ROLE_USER hard-coding from `register()`
+- `src/main/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImpl.java` — remove ROLE_USER hard-coding from `register()` and pass full name into token generation
 - `src/main/java/com/uynguyen/aegis_id/role/Role.java` — add unique constraint on `name`
 - `src/main/java/com/uynguyen/aegis_id/role/RoleRepository.java` — may add `existsByName()`, `findAllByNameIn()` queries
 - `src/main/java/com/uynguyen/aegis_id/role/RoleInitializer.java` — **NEW**: ApplicationRunner to seed roles + bootstrap admin
@@ -275,8 +322,8 @@ Each phase includes its own tests.
 - `src/main/java/com/uynguyen/aegis_id/role/impl/RoleServiceImpl.java` — **NEW**: role service implementation
 - `src/main/java/com/uynguyen/aegis_id/user/UserController.java` — add admin endpoints for user-role assignment (or new `AdminController`)
 - `src/main/resources/application.yml` — add `app.security.jwt.include-roles-claim` ✅, `app.security.roles`, `app.security.admin-emails`
-- `src/test/java/com/uynguyen/aegis_id/security/JwtServiceTest.java` — add toggle tests ✅
-- `src/test/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImplTest.java` — update registration tests
+- `src/test/java/com/uynguyen/aegis_id/security/JwtServiceTest.java` — add toggle tests ✅, full-name-claim tests, and migrate to 4-arg token APIs
+- `src/test/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImplTest.java` — update registration tests and verify first/last-name token arguments
 - `src/test/java/com/uynguyen/aegis_id/role/RoleInitializerTest.java` — **NEW**: tests for role seeding + admin bootstrap
 - `src/test/java/com/uynguyen/aegis_id/user/UserControllerTest.java` — add tests for admin role-assignment endpoints
 
@@ -286,6 +333,8 @@ Each phase includes its own tests.
 - **No roles on registration** — users start with zero roles
 - **ROLE\_ auto-prefix** — input `ADMIN` → stored as `ROLE_ADMIN`
 - **JWT roles claim defaults to OFF** — opt-in via `JWT_INCLUDE_ROLES_CLAIM=true` env var; runtime-toggleable via Actuator endpoint on management port
+- **Full-name claim in JWT** — include normalized `full_name` in access and refresh tokens for client display convenience
+- **No backward-compat JWT API layer** — removed 2-arg `generateAccessToken` / `generateRefreshToken` overloads; 4-arg signature is now the single contract
 - **Toggle lives in JwtService** — `AtomicBoolean` for thread-safe runtime switching; AuthenticationServiceImpl always passes roles; JwtService decides whether to embed them
 - **Management port separation** — Actuator endpoints served on port 8081, not exposed through main API or JWT auth
 - **Additive-only role seeding** — RoleInitializer never deletes roles; removal is a manual/migration operation

@@ -66,11 +66,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         final String accessToken = this.jwtService.generateAccessToken(
             user.getId(),
-            roles
+            roles,
+            user.getFirstName(),
+            user.getLastName()
         );
         final String refreshToken = this.jwtService.generateRefreshToken(
             user.getId(),
-            roles
+            roles,
+            user.getFirstName(),
+            user.getLastName()
         );
         final String tokenType = "Bearer";
 
