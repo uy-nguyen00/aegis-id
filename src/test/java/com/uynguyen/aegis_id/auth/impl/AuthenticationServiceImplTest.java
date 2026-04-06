@@ -64,6 +64,8 @@ class AuthenticationServiceImplTest {
             User user = new User();
             user.setId("user-id");
             user.setEmail("test@example.com");
+            user.setFirstName("John");
+            user.setLastName("Doe");
 
             when(
                 userRepository.existsByEmailIgnoreCase(anyString())
@@ -186,6 +188,8 @@ class AuthenticationServiceImplTest {
             User user = new User();
             user.setId("user-id");
             user.setEmail("test@example.com");
+            user.setFirstName("John");
+            user.setLastName("Doe");
 
             Authentication authentication = mock(Authentication.class);
             when(authentication.getPrincipal()).thenReturn(user);
@@ -196,12 +200,12 @@ class AuthenticationServiceImplTest {
                 )
             ).thenReturn(authentication);
 
-            when(jwtService.generateAccessToken(any(), any())).thenReturn(
-                "access-token"
-            );
-            when(jwtService.generateRefreshToken(any(), any())).thenReturn(
-                "refresh-token"
-            );
+            when(
+                jwtService.generateAccessToken(any(), any(), any(), any())
+            ).thenReturn("access-token");
+            when(
+                jwtService.generateRefreshToken(any(), any(), any(), any())
+            ).thenReturn("refresh-token");
 
             // When
             AuthenticationResponse response = authenticationService.login(
@@ -217,8 +221,18 @@ class AuthenticationServiceImplTest {
             verify(authenticationManager).authenticate(
                 any(UsernamePasswordAuthenticationToken.class)
             );
-            verify(jwtService).generateAccessToken(eq("user-id"), any());
-            verify(jwtService).generateRefreshToken(eq("user-id"), any());
+            verify(jwtService).generateAccessToken(
+                eq("user-id"),
+                any(),
+                eq("John"),
+                eq("Doe")
+            );
+            verify(jwtService).generateRefreshToken(
+                eq("user-id"),
+                any(),
+                eq("John"),
+                eq("Doe")
+            );
         }
 
         @Test
@@ -240,7 +254,12 @@ class AuthenticationServiceImplTest {
                 authenticationService.login(request)
             );
 
-            verify(jwtService, never()).generateAccessToken(anyString(), any());
+            verify(jwtService, never()).generateAccessToken(
+                anyString(),
+                any(),
+                any(),
+                any()
+            );
         }
     }
 
