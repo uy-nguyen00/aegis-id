@@ -364,8 +364,8 @@ class RegistrationRequestTest {
         }
 
         @Test
-        @DisplayName("Should reject null phone number")
-        void testPhoneNumberCannotBeNull() {
+        @DisplayName("Should accept null phone number")
+        void testPhoneNumberCanBeNull() {
             // Given
             RegistrationRequest request = createValidRequest();
             request.setPhoneNumber(null);
@@ -375,11 +375,7 @@ class RegistrationRequestTest {
                 validator.validate(request);
 
             // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "phoneNumber"),
-                "Should have violation for phoneNumber property"
-            );
+            assertTrue(violations.isEmpty());
         }
 
         @Test
@@ -416,11 +412,28 @@ class RegistrationRequestTest {
             assertFalse(violations.isEmpty());
         }
 
+        @Test
+        @DisplayName("Should reject phone number without leading plus")
+        void testPhoneNumberWithoutLeadingPlus() {
+            // Given
+            RegistrationRequest request = createValidRequest();
+            request.setPhoneNumber("33123456789");
+
+            // When
+            Set<ConstraintViolation<RegistrationRequest>> violations =
+                validator.validate(request);
+
+            // Then
+            assertEquals(1, violations.size());
+            assertTrue(
+                hasViolationForProperty(violations, "phoneNumber"),
+                "Should have violation for phoneNumber property"
+            );
+        }
+
         @ParameterizedTest
-        @DisplayName("Should accept valid phone number formats")
-        @ValueSource(
-            strings = { "+33123456789", "33123456789", "+14155552671" }
-        )
+        @DisplayName("Should accept valid plus-prefixed phone numbers")
+        @ValueSource(strings = { "+33123456789", "+14155552671" })
         void testValidPhoneNumberFormats(String phoneNumber) {
             // Given
             RegistrationRequest request = createValidRequest();

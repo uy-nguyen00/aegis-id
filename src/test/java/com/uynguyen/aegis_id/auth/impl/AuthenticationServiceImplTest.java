@@ -87,6 +87,39 @@ class AuthenticationServiceImplTest {
         }
 
         @Test
+        @DisplayName(
+            "Should register user successfully when phone number is null"
+        )
+        void shouldRegisterUserSuccessfullyWhenPhoneNumberIsNull() {
+            // Given
+            RegistrationRequest request = mock(RegistrationRequest.class);
+            when(request.getEmail()).thenReturn("test@example.com");
+            when(request.getPhoneNumber()).thenReturn(null);
+            when(request.getPassword()).thenReturn("password");
+            when(request.getConfirmPassword()).thenReturn("password");
+
+            User user = new User();
+            user.setId("user-id");
+            user.setEmail("test@example.com");
+            user.setFirstName("John");
+            user.setLastName("Doe");
+
+            when(
+                userRepository.existsByEmailIgnoreCase(anyString())
+            ).thenReturn(false);
+            when(userMapper.toUser(any(RegistrationRequest.class))).thenReturn(
+                user
+            );
+
+            // When
+            authenticationService.register(request);
+
+            // Then
+            verify(userRepository, never()).existsByPhoneNumber(anyString());
+            verify(userRepository).save(user);
+        }
+
+        @Test
         @DisplayName("Should throw BusinessException when email already exists")
         void shouldThrowExceptionWhenEmailExists() {
             // Given
