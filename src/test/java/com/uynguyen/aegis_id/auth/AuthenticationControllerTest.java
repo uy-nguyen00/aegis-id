@@ -167,6 +167,27 @@ class AuthenticationControllerTest {
         }
 
         @Test
+        @DisplayName("Should create user when last name is null")
+        void shouldCreateUser_WhenLastNameIsNull() {
+            RegistrationRequest request = RegistrationRequest.builder()
+                .firstName("John Doe")
+                .lastName(null)
+                .email("john.doe@example.com")
+                .phoneNumber("+1234567890")
+                .password("Password123!")
+                .confirmPassword("Password123!")
+                .build();
+
+            restTestClient
+                .post()
+                .uri(apiPrefix + "register")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isCreated();
+        }
+
+        @Test
         @DisplayName("Should return 400 Bad Request when email is invalid")
         void shouldReturnBadRequest_WhenEmailIsInvalid() {
             RegistrationRequest request = RegistrationRequest.builder()

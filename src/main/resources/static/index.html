@@ -36,7 +36,7 @@
             </div>
             <div class="field">
                 <label for="reg-lastName">Last name</label>
-                <input type="text" id="reg-lastName" name="lastName" required minlength="1" maxlength="50" autocomplete="family-name">
+                <input type="text" id="reg-lastName" name="lastName" maxlength="50" autocomplete="family-name">
                 <span class="field-error"></span>
             </div>
             <div class="field">
@@ -67,16 +67,22 @@
         <div id="token-result" class="token-result hidden">
             <h3>Authentication tokens</h3>
             <div class="token-field">
-                <label>Access token</label>
-                <textarea id="access-token" readonly rows="3"></textarea>
+                <label>
+                    <textarea id="access-token" readonly rows="3"></textarea>
+                    Access token
+                </label>
             </div>
             <div class="token-field">
-                <label>Refresh token</label>
-                <textarea id="refresh-token" readonly rows="3"></textarea>
+                <label>
+                    <textarea id="refresh-token" readonly rows="3"></textarea>
+                    Refresh token
+                </label>
             </div>
             <div class="token-field">
-                <label>Token type</label>
-                <input id="token-type" readonly>
+                <label>
+                    <input id="token-type" readonly>
+                    Token type
+                </label>
             </div>
         </div>
     </div>

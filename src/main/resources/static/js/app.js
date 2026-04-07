@@ -19,7 +19,7 @@
     // --- Tab switching ---
     tabs.forEach(function (tab) {
         tab.addEventListener("click", function () {
-            var target = tab.dataset.tab;
+            const target = tab.dataset.tab;
             tabs.forEach(function (t) { t.classList.remove("active"); });
             tab.classList.add("active");
 
@@ -38,7 +38,7 @@
         clearMessages();
         clearFieldErrors(loginForm);
 
-        var data = {
+        const data = {
             email: val("login-email"),
             password: val("login-password"),
         };
@@ -55,9 +55,9 @@
         clearMessages();
         clearFieldErrors(registerForm);
 
-        var data = {
+        const data = {
             firstName: val("reg-firstName"),
-            lastName: val("reg-lastName"),
+            lastName: optionalVal("reg-lastName"),
             email: val("reg-email"),
             phoneNumber: val("reg-phoneNumber"),
             password: val("reg-password"),
@@ -85,7 +85,7 @@
 
     // --- API call ---
     function submitForm(url, data, form, onSuccess) {
-        var btn = form.querySelector(".btn");
+        let btn = form.querySelector(".btn");
         btn.disabled = true;
 
         fetch(url, {
@@ -123,15 +123,15 @@
             });
         }
 
-        var msg = err.message || "An unexpected error occurred.";
+        const msg = err.message || "An unexpected error occurred.";
         showMessage(msg, "error");
     }
 
     function showFieldError(form, fieldName, message) {
-        var input = form.querySelector('[name="' + fieldName + '"]');
+        let input = form.querySelector('[name="' + fieldName + '"]');
         if (!input) return;
         input.classList.add("input-error");
-        var errorSpan = input.parentElement.querySelector(".field-error");
+        let errorSpan = input.parentElement.querySelector(".field-error");
         if (errorSpan) errorSpan.textContent = message;
     }
 
@@ -169,5 +169,10 @@
     // --- Helpers ---
     function val(id) {
         return document.getElementById(id).value.trim();
+    }
+
+    function optionalVal(id) {
+        const value = val(id);
+        return value === "" ? null : value;
     }
 })();

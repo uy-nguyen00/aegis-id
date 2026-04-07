@@ -83,9 +83,10 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     private Optional<UserDetails> loadUserDetails(final String tokenSubject) {
-        final Optional<UserDetails> userById = this.userRepository.findById(
-            tokenSubject
-        ).map(UserDetails.class::cast);
+        final Optional<UserDetails> userById =
+            this.userRepository.findWithRolesById(tokenSubject).map(
+                UserDetails.class::cast
+            );
 
         if (userById.isPresent()) {
             return userById;

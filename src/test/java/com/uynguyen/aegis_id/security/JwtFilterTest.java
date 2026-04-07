@@ -136,7 +136,7 @@ class JwtFilterTest {
             when(jwtService.extractUserIdFromToken("token-123")).thenReturn(
                 "subject-1"
             );
-            when(userRepository.findById("subject-1")).thenReturn(
+            when(userRepository.findWithRolesById("subject-1")).thenReturn(
                 Optional.empty()
             );
             when(userDetailsService.loadUserByUsername("subject-1")).thenReturn(
@@ -175,7 +175,7 @@ class JwtFilterTest {
             when(jwtService.extractUserIdFromToken("token-123")).thenReturn(
                 "subject-2"
             );
-            when(userRepository.findById("subject-2")).thenReturn(
+            when(userRepository.findWithRolesById("subject-2")).thenReturn(
                 Optional.empty()
             );
             when(userDetailsService.loadUserByUsername("subject-2")).thenThrow(
@@ -213,7 +213,7 @@ class JwtFilterTest {
             when(jwtService.extractUserIdFromToken("token-123")).thenReturn(
                 "subject-3"
             );
-            when(userRepository.findById("subject-3")).thenReturn(
+            when(userRepository.findWithRolesById("subject-3")).thenReturn(
                 Optional.of(user)
             );
             when(jwtService.isTokenValid("token-123", "subject-3")).thenReturn(

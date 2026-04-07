@@ -24,8 +24,7 @@ public class RegistrationRequest {
     @Schema(example = "John")
     private String firstName;
 
-    @NotBlank(message = "VALIDATION.REGISTRATION.LASTNAME.BLANK")
-    @Size(min = 1, max = 50, message = "VALIDATION.REGISTRATION.LASTNAME.SIZE")
+    @Size(max = 50, message = "VALIDATION.REGISTRATION.LASTNAME.SIZE")
     @Pattern(
         regexp = "^[\\p{L} '-]+$",
         message = "VALIDATION.REGISTRATION.LASTNAME.PATTERN"

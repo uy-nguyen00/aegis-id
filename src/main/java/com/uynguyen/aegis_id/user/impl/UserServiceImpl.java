@@ -29,11 +29,12 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDetails loadUserByUsername(final String userEmail)
         throws UsernameNotFoundException {
-        return this.userRepository.findByEmailIgnoreCase(userEmail).orElseThrow(
-            () ->
-                new UsernameNotFoundException(
-                    "User not found with user email : " + userEmail
-                )
+        return this.userRepository.findWithRolesByEmailIgnoreCase(
+            userEmail
+        ).orElseThrow(() ->
+            new UsernameNotFoundException(
+                "User not found with user email : " + userEmail
+            )
         );
     }
 

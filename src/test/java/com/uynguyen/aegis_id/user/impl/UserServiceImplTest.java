@@ -68,9 +68,9 @@ class UserServiceImplTest {
         @DisplayName("Should load user with valid username")
         void shouldLoadUser_WithValidUsername() {
             final String userEmail = "john.doe@example.com";
-            when(userRepository.findByEmailIgnoreCase(userEmail)).thenReturn(
-                Optional.of(testUser)
-            );
+            when(
+                userRepository.findWithRolesByEmailIgnoreCase(userEmail)
+            ).thenReturn(Optional.of(testUser));
 
             final UserDetails userDetails = userService.loadUserByUsername(
                 userEmail
@@ -78,7 +78,7 @@ class UserServiceImplTest {
 
             assertNotNull(userDetails);
             assertEquals(userDetails.getUsername(), testUser.getUsername());
-            verify(userRepository).findByEmailIgnoreCase(userEmail);
+            verify(userRepository).findWithRolesByEmailIgnoreCase(userEmail);
         }
 
         @Test
@@ -88,13 +88,15 @@ class UserServiceImplTest {
         void shouldThrowException_WhenUserNotFound() {
             final String nonExistentEmail = "nonexistent@example.com";
             when(
-                userRepository.findByEmailIgnoreCase(nonExistentEmail)
+                userRepository.findWithRolesByEmailIgnoreCase(nonExistentEmail)
             ).thenReturn(Optional.empty());
 
             assertThrows(UsernameNotFoundException.class, () ->
                 userService.loadUserByUsername(nonExistentEmail)
             );
-            verify(userRepository).findByEmailIgnoreCase(nonExistentEmail);
+            verify(userRepository).findWithRolesByEmailIgnoreCase(
+                nonExistentEmail
+            );
         }
 
         @Test
@@ -102,7 +104,7 @@ class UserServiceImplTest {
         void shouldLoadUser_WithUppercaseEmail() {
             final String upperCaseEmail = "JOHN.DOE@EXAMPLE.COM";
             when(
-                userRepository.findByEmailIgnoreCase(upperCaseEmail)
+                userRepository.findWithRolesByEmailIgnoreCase(upperCaseEmail)
             ).thenReturn(Optional.of(testUser));
 
             final UserDetails userDetails = userService.loadUserByUsername(
@@ -111,7 +113,9 @@ class UserServiceImplTest {
 
             assertNotNull(userDetails);
             assertEquals(testUser.getUsername(), userDetails.getUsername());
-            verify(userRepository).findByEmailIgnoreCase(upperCaseEmail);
+            verify(userRepository).findWithRolesByEmailIgnoreCase(
+                upperCaseEmail
+            );
         }
 
         @Test
@@ -119,7 +123,7 @@ class UserServiceImplTest {
         void shouldLoadUser_WithMixedCaseEmail() {
             final String mixedCaseEmail = "JoHn.DoE@ExAmPlE.cOm";
             when(
-                userRepository.findByEmailIgnoreCase(mixedCaseEmail)
+                userRepository.findWithRolesByEmailIgnoreCase(mixedCaseEmail)
             ).thenReturn(Optional.of(testUser));
 
             final UserDetails userDetails = userService.loadUserByUsername(
@@ -128,7 +132,9 @@ class UserServiceImplTest {
 
             assertNotNull(userDetails);
             assertEquals(testUser.getUsername(), userDetails.getUsername());
-            verify(userRepository).findByEmailIgnoreCase(mixedCaseEmail);
+            verify(userRepository).findWithRolesByEmailIgnoreCase(
+                mixedCaseEmail
+            );
         }
 
         @Test
@@ -136,14 +142,14 @@ class UserServiceImplTest {
             "Should throw UsernameNotFoundException when null username provided"
         )
         void shouldThrowException_WhenNullUsername() {
-            when(userRepository.findByEmailIgnoreCase(null)).thenReturn(
-                Optional.empty()
-            );
+            when(
+                userRepository.findWithRolesByEmailIgnoreCase(null)
+            ).thenReturn(Optional.empty());
 
             assertThrows(UsernameNotFoundException.class, () ->
                 userService.loadUserByUsername(null)
             );
-            verify(userRepository).findByEmailIgnoreCase(null);
+            verify(userRepository).findWithRolesByEmailIgnoreCase(null);
         }
 
         @Test
@@ -152,14 +158,14 @@ class UserServiceImplTest {
         )
         void shouldThrowException_WhenEmptyUsername() {
             final String emptyEmail = "";
-            when(userRepository.findByEmailIgnoreCase(emptyEmail)).thenReturn(
-                Optional.empty()
-            );
+            when(
+                userRepository.findWithRolesByEmailIgnoreCase(emptyEmail)
+            ).thenReturn(Optional.empty());
 
             assertThrows(UsernameNotFoundException.class, () ->
                 userService.loadUserByUsername(emptyEmail)
             );
-            verify(userRepository).findByEmailIgnoreCase(emptyEmail);
+            verify(userRepository).findWithRolesByEmailIgnoreCase(emptyEmail);
         }
 
         @Test
@@ -168,9 +174,9 @@ class UserServiceImplTest {
         )
         void shouldThrowExceptionWithCorrectMessage_WhenUserNotFound() {
             final String email = "test@example.com";
-            when(userRepository.findByEmailIgnoreCase(email)).thenReturn(
-                Optional.empty()
-            );
+            when(
+                userRepository.findWithRolesByEmailIgnoreCase(email)
+            ).thenReturn(Optional.empty());
 
             UsernameNotFoundException exception = assertThrows(
                 UsernameNotFoundException.class,
@@ -188,7 +194,7 @@ class UserServiceImplTest {
         void shouldLoadUser_WithEmailHavingWhitespace() {
             final String emailWithSpaces = "  john.doe@example.com  ";
             when(
-                userRepository.findByEmailIgnoreCase(emailWithSpaces)
+                userRepository.findWithRolesByEmailIgnoreCase(emailWithSpaces)
             ).thenReturn(Optional.of(testUser));
 
             final UserDetails userDetails = userService.loadUserByUsername(
@@ -196,7 +202,9 @@ class UserServiceImplTest {
             );
 
             assertNotNull(userDetails);
-            verify(userRepository).findByEmailIgnoreCase(emailWithSpaces);
+            verify(userRepository).findWithRolesByEmailIgnoreCase(
+                emailWithSpaces
+            );
         }
     }
 

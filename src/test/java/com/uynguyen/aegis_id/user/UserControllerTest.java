@@ -56,7 +56,7 @@ class UserControllerTest {
 
         when(this.jwtService.extractUserIdFromToken(token)).thenReturn(userId);
         when(this.jwtService.isTokenValid(token, userId)).thenReturn(true);
-        when(this.userRepository.findById(userId)).thenReturn(
+        when(this.userRepository.findWithRolesById(userId)).thenReturn(
             Optional.of(this.user)
         );
     }
@@ -109,6 +109,30 @@ class UserControllerTest {
             ProfileUpdateRequest request = ProfileUpdateRequest.builder()
                 .firstName("John")
                 .lastName("Doe")
+                .dateOfBirth(LocalDate.of(1990, 1, 1))
+                .build();
+
+            restTestClient
+                .patch()
+                .uri(apiPrefix + "me")
+                .header("Authorization", "Bearer " + token)
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+            verify(userService).updateProfileInfo(
+                any(ProfileUpdateRequest.class),
+                eq("user-id")
+            );
+        }
+
+        @Test
+        @DisplayName("Should update profile when last name is null")
+        void shouldUpdateProfile_WhenLastNameIsNull() {
+            ProfileUpdateRequest request = ProfileUpdateRequest.builder()
+                .firstName("John")
+                .lastName(null)
                 .dateOfBirth(LocalDate.of(1990, 1, 1))
                 .build();
 
