@@ -16,8 +16,6 @@ public class ProfileUpdateRequest {
     @NotEmpty
     private String firstName;
 
-    @NotNull
-    @NotEmpty
     private String lastName;
 
     @NotNull

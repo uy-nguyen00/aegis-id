@@ -4,9 +4,10 @@ import com.uynguyen.aegis_id.role.Role;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
@@ -34,7 +35,7 @@ public class User implements UserDetails {
     @Column(name = "FIRST_NAME", nullable = false)
     private String firstName;
 
-    @Column(name = "LAST_NAME", nullable = false)
+    @Column(name = "LAST_NAME")
     private String lastName;
 
     @Column(name = "EMAIL", nullable = false, unique = true)
@@ -75,17 +76,14 @@ public class User implements UserDetails {
     @Column(name = "LAST_MODIFIED_DATE", insertable = false)
     private LocalDateTime lastModifiedDate;
 
-    @ManyToMany(
-        cascade = { CascadeType.PERSIST, CascadeType.MERGE }, // if an user is created with a unexisting role, the role will be created
-        fetch = FetchType.EAGER
-    )
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "USERS_ROLES",
         joinColumns = { @JoinColumn(name = "USER_ID") },
         inverseJoinColumns = { @JoinColumn(name = "ROLE_ID") }
     )
     @Builder.Default
-    private List<Role> roles = new ArrayList<>();
+    private Set<Role> roles = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

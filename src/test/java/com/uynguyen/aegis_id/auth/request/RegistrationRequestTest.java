@@ -201,8 +201,8 @@ class RegistrationRequestTest {
         }
 
         @Test
-        @DisplayName("Should reject null last name")
-        void testLastNameCannotBeNull() {
+        @DisplayName("Should accept null last name")
+        void testLastNameCanBeNull() {
             // Given
             RegistrationRequest request = createValidRequest();
             request.setLastName(null);
@@ -212,11 +212,7 @@ class RegistrationRequestTest {
                 validator.validate(request);
 
             // Then
-            assertEquals(1, violations.size());
-            assertTrue(
-                hasViolationForProperty(violations, "lastName"),
-                "Should have violation for lastName property"
-            );
+            assertTrue(violations.isEmpty());
         }
 
         @Test
