@@ -2,15 +2,16 @@
 
 ## TL;DR
 
-Decouple User and Role so registration doesn't require roles, inject user full name into JWT tokens, seed roles from environment variables on startup (auto-prefixed with `ROLE_`), make JWT roles claims toggleable via env var, provide admin endpoints for user-role assignment, and skip creating a RoleController for role CRUD (security risk with no current benefit).
+Decouple User and Role so registration doesn't require roles, inject user full name and email into JWT tokens, introduce `TokenUserInfo` to eliminate parameter explosion in token APIs, seed roles from environment variables on startup (auto-prefixed with `ROLE_`), make JWT roles claims toggleable via env var, provide admin endpoints for user-role assignment, and skip creating a RoleController for role CRUD (security risk with no current benefit).
 
 **Phase order** — prioritized by isolation and risk (safest first):
 
 1. **JWT roles claim toggle** — zero runtime impact (JwtFilter already loads roles from DB, not JWT)
 2. **Decouple registration** — removes hard `ROLE_USER` requirement
 3. **Inject full name claim into JWT** — claim-only change with no authorization impact
-4. **Role seeding from env vars** — new feature, no dependency on 1-3
-5. **Admin endpoints** — depends on roles being seeded
+4. **Introduce `TokenUserInfo` and add email claim** — structural refactor + new claim, no authorization impact
+5. **Role seeding from env vars** — new feature, no dependency on 1-4
+6. **Admin endpoints** — depends on roles being seeded
 
 Each phase includes its own tests.
 
@@ -176,19 +177,120 @@ Each phase includes its own tests.
 
 ---
 
-## Phase 4: Role Seeding from Environment Variables
+## Phase 4: Introduce `TokenUserInfo` and Add Email Claim
 
-### Step 4.1 — Add configuration properties
+> **Why now?** Adding email to the token would be the third time we extend `generateAccessToken` / `generateRefreshToken` signatures. Each new claim currently requires changes to method signatures, all callers, the refresh flow, and every test. Introducing a `TokenUserInfo` record first consolidates user data into a single object, making this change — and all future claim additions — a localized edit.
+
+### The structural problem
+
+Current state: `generateAccessToken(userId, roles, firstName, lastName)` — 4 scalar parameters. Adding email makes it 5. Each addition touches:
+
+- `JwtService.generateAccessToken()` and `generateRefreshToken()` signatures
+- `JwtService.refreshAccessToken()` claim extraction
+- `AuthenticationServiceImpl.login()` call site
+- Every test that constructs or mocks token generation
+
+### Step 4.1 — Introduce `TokenUserInfo` record
+
+- New record: `src/main/java/com/uynguyen/aegis_id/security/TokenUserInfo.java`
+- Fields: `String userId`, `List<String> roles`, `String firstName`, `String lastName`, `String email`
+- Pure data carrier — no business logic, no Spring annotations
+- Future claims (e.g., avatar URL, locale) only require adding a field here + claim-building logic in `JwtService`
+
+### Step 4.2 — Refactor `JwtService` to use `TokenUserInfo`
+
+- Replace `generateAccessToken(String userId, List<String> roles, String firstName, String lastName)` → `generateAccessToken(TokenUserInfo userInfo)`
+- Replace `generateRefreshToken(String userId, List<String> roles, String firstName, String lastName)` → `generateRefreshToken(TokenUserInfo userInfo)`
+- Extract a private `buildClaims(TokenUserInfo userInfo, String tokenType)` method that centralizes all claim construction:
+    - `token_type` — always added
+    - `roles` — conditional on `includeRolesClaim` toggle
+    - `full_name` — computed from `userInfo.firstName()` + `userInfo.lastName()` (existing logic)
+    - `email` — always added when non-null/non-blank
+- New constant: `EMAIL_CLAIM = "email"`
+- Future claims: add one `claims.put(...)` line in `buildClaims()` — no signature changes anywhere
+
+### Step 4.3 — Update refresh flow
+
+- `refreshAccessToken()` reconstructs `TokenUserInfo` from token claims:
+    - `userId` ← `claims.getSubject()`
+    - `roles` ← `claims.get(ROLES_CLAIM)` with null guard
+    - `firstName` ← `claims.get(FULL_NAME_CLAIM)` (already-normalized full name, passed as firstName — `buildFullName` returns it as-is since lastName is null)
+    - `lastName` ← `null`
+    - `email` ← `claims.get(EMAIL_CLAIM)`
+- Then delegates to `generateAccessToken(userInfo)` as before
+- **Net effect**: adding a new claim to refresh requires only adding one `claims.get(...)` line + one record field — no signature cascading
+
+### Step 4.4 — Add `extractEmailFromToken()` accessor
+
+- New public method in `JwtService` for explicit claim extraction in tests
+- Pattern matches existing `extractFullNameFromToken()` and `extractRolesFromToken()`
+
+### Step 4.5 — Update `AuthenticationServiceImpl`
+
+- `login()` builds a `TokenUserInfo` from the `User` principal:
+    ```
+    TokenUserInfo userInfo = new TokenUserInfo(
+        user.getUserId(), roles, user.getFirstName(), user.getLastName(), user.getEmail()
+    );
+    ```
+- Passes `userInfo` to both `generateAccessToken()` and `generateRefreshToken()`
+- **Future additions**: just add a field from `User` to the record constructor — one line
+
+### Step 4.6 — Tests
+
+- Update all `JwtServiceTest` token-generation calls from 4-arg to `TokenUserInfo`-based
+- Add `@Nested` class `EmailClaimTests` with cases:
+    1. email included in access token when present
+    2. email included in refresh token when present
+    3. email omitted when null/blank
+    4. email preserved across refresh-token → access-token flow
+- Update `AuthenticationServiceImplTest` to:
+    - verify `JwtService` is called with `TokenUserInfo` containing the expected email
+    - use `ArgumentCaptor<TokenUserInfo>` instead of positional `eq()/any()` matchers (cleaner assertions)
+- Update `JwtFilterTest` if it mocks token generation
+
+### Step 4.7 — Verification
+
+1. Targeted validation: `JwtServiceTest` + `AuthenticationServiceImplTest` pass
+2. Full suite passes with no regressions
+3. Generated tokens contain `email` claim when user has email
+4. Refreshed tokens preserve `email` claim
+
+### Why `TokenUserInfo` and not a `Map<String, Object>`?
+
+- **Type safety** — compiler catches missing/wrong fields; a map silently accepts anything
+- **Discoverability** — record fields document exactly what data token generation needs
+- **Refactor-friendly** — renaming a field is a compile error, not a silent runtime bug
+- **Testability** — `ArgumentCaptor<TokenUserInfo>` gives structured assertions vs. inspecting map keys
+
+### Future claim checklist (after this phase)
+
+To add a new claim to JWT tokens:
+
+1. Add field to `TokenUserInfo` record
+2. In `JwtService.buildClaims()`, add `claims.put(NEW_CLAIM, userInfo.newField())`
+3. In `JwtService.refreshAccessToken()`, extract the claim and pass to `TokenUserInfo` constructor
+4. In `AuthenticationServiceImpl.login()`, pass the data from `User` to `TokenUserInfo`
+5. (Optional) Add `extractNewFieldFromToken()` accessor in `JwtService`
+6. Add tests
+
+No method signature changes. No test rewrites. ~5 lines of production code per claim.
+
+---
+
+## Phase 5: Role Seeding from Environment Variables
+
+### Step 5.1 — Add configuration properties
 
 - In `application.yml`, add:
     - `app.security.roles` — comma-separated list of role names (e.g., `USER,ADMIN` or `CREATOR,MEMBER`)
 - Maps to env var `APP_ROLES`
 
-### Step 4.2 — Add unique constraint to Role.name
+### Step 5.2 — Add unique constraint to Role.name
 
 - In `Role.java`, add `unique = true` to the `@Column(name = "NAME")` annotation to prevent duplicate roles at DB level
 
-### Step 4.3 — Create RoleInitializer component
+### Step 5.3 — Create RoleInitializer component
 
 - New class: `src/main/java/com/uynguyen/aegis_id/role/RoleInitializer.java`
 - Implements `ApplicationRunner`
@@ -200,7 +302,7 @@ Each phase includes its own tests.
 - Log each created/skipped role at INFO level
 - If `app.security.roles` is empty/missing, do nothing (no-op)
 
-### Step 4.4 — Role lifecycle: adding and removing roles
+### Step 5.4 — Role lifecycle: adding and removing roles
 
 **Adding a role:**
 
@@ -218,7 +320,7 @@ Each phase includes its own tests.
     3. Optionally delete the orphaned role row via a DB migration or manual operation
 - **Why not auto-sync/delete?** A typo in `APP_ROLES` (e.g., accidentally omitting `ADMIN`) would wipe that role from all users on next deploy. Additive-only is the safe default.
 
-### Step 4.5 — Bootstrap: first admin user
+### Step 5.5 — Bootstrap: first admin user
 
 - Add `app.security.admin-emails` config property (maps to env var `APP_ADMIN_EMAILS`)
 - Comma-separated list of email addresses that should receive the admin role on startup
@@ -226,10 +328,10 @@ Each phase includes its own tests.
     - If the user exists and doesn't already have the admin role → assign it
     - If the user doesn't exist yet → skip (they'll need to be assigned later via admin endpoint)
     - Admin role name is determined by convention: uses the first role in `APP_ROLES` that contains `ADMIN`, or a separate `app.security.admin-role` property if explicit control is needed
-- This solves the **chicken-and-egg problem**: admin endpoints (Phase 5) require an admin, but no admin exists without this bootstrap
+- This solves the **chicken-and-egg problem**: admin endpoints (Phase 6) require an admin, but no admin exists without this bootstrap
 - Log assignments at INFO level
 
-### Step 4.6 — Tests
+### Step 5.6 — Tests
 
 - Test: roles are created on startup when `app.security.roles` is configured
 - Test: existing roles are not duplicated
@@ -238,7 +340,7 @@ Each phase includes its own tests.
 - Test: admin bootstrap assigns admin role to configured emails
 - Test: admin bootstrap skips non-existent users gracefully
 
-### Step 4.7 — Verification
+### Step 5.7 — Verification
 
 1. Start app with `APP_ROLES=USER,ADMIN` → verify `ROLE_USER` and `ROLE_ADMIN` appear in ROLES table
 2. Start app with no `APP_ROLES` → no roles created, no errors
@@ -248,9 +350,9 @@ Each phase includes its own tests.
 
 ---
 
-## Phase 5: Admin Endpoints for User-Role Assignment
+## Phase 6: Admin Endpoints for User-Role Assignment
 
-### Step 5.1 — Add `RoleService`
+### Step 6.1 — Add `RoleService`
 
 - New class: `src/main/java/com/uynguyen/aegis_id/role/RoleService.java` (interface) + `impl/RoleServiceImpl.java`
 - Methods:
@@ -258,7 +360,7 @@ Each phase includes its own tests.
     - `List<Role> findAll()` — for listing available roles
 - Used by the admin endpoint and `RoleInitializer`
 
-### Step 5.2 — Add role assignment endpoints
+### Step 6.2 — Add role assignment endpoints
 
 - Add to `UserController` (or a new `AdminController` if separation is preferred):
     - **`PUT /api/v1/users/{userId}/roles`** — Replace all roles for a user. Request body: `{ "roles": ["ROLE_ADMIN", "ROLE_USER"] }`. Validates each role exists in the DB before assigning.
@@ -267,19 +369,19 @@ Each phase includes its own tests.
 - Returns `404` if user or role not found
 - Returns `403` if caller is not an admin
 
-### Step 5.3 — Self-demotion guard
+### Step 6.3 — Self-demotion guard
 
 - Prevent an admin from removing their own admin role via this endpoint
 - If `userId` matches the authenticated user and the request removes the admin role → reject with `400 Bad Request`
 - This prevents accidental lockout (last admin removes their own access)
 
-### Step 5.4 — Update SecurityConfig
+### Step 6.4 — Update SecurityConfig
 
 - `@EnableMethodSecurity` is already present
 - No URL-level role checks needed — `@PreAuthorize` on the controller methods is sufficient
 - Ensure `JwtFilter` / `User.getAuthorities()` correctly populates `ROLE_ADMIN` so `hasRole('ADMIN')` works
 
-### Step 5.5 — Tests
+### Step 6.5 — Tests
 
 - Test: admin can assign roles to a user
 - Test: admin can list a user's roles
@@ -288,7 +390,7 @@ Each phase includes its own tests.
 - Test: self-demotion guard rejects removing own admin role
 - Test: assigning roles to non-existent user returns `404`
 
-### Step 5.6 — Verification
+### Step 6.6 — Verification
 
 1. As admin, `PUT /api/v1/users/{userId}/roles` → roles are updated
 2. As non-admin, attempt same endpoint → `403`
@@ -312,7 +414,8 @@ Each phase includes its own tests.
 
 ## Relevant Files
 
-- `src/main/java/com/uynguyen/aegis_id/security/JwtService.java` — toggle roles claim on/off ✅
+- `src/main/java/com/uynguyen/aegis_id/security/JwtService.java` — toggle roles claim on/off ✅, refactor to `TokenUserInfo`-based API + email claim
+- `src/main/java/com/uynguyen/aegis_id/security/TokenUserInfo.java` — **NEW**: record grouping all user data for token generation
 - `src/main/java/com/uynguyen/aegis_id/security/JwtConfigEndpoint.java` — **NEW** ✅: Actuator endpoint for runtime toggle
 - `src/main/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImpl.java` — remove ROLE_USER hard-coding from `register()` and pass full name into token generation
 - `src/main/java/com/uynguyen/aegis_id/role/Role.java` — add unique constraint on `name`
@@ -322,8 +425,8 @@ Each phase includes its own tests.
 - `src/main/java/com/uynguyen/aegis_id/role/impl/RoleServiceImpl.java` — **NEW**: role service implementation
 - `src/main/java/com/uynguyen/aegis_id/user/UserController.java` — add admin endpoints for user-role assignment (or new `AdminController`)
 - `src/main/resources/application.yml` — add `app.security.jwt.include-roles-claim` ✅, `app.security.roles`, `app.security.admin-emails`
-- `src/test/java/com/uynguyen/aegis_id/security/JwtServiceTest.java` — add toggle tests ✅, full-name-claim tests, and migrate to 4-arg token APIs
-- `src/test/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImplTest.java` — update registration tests and verify first/last-name token arguments
+- `src/test/java/com/uynguyen/aegis_id/security/JwtServiceTest.java` — add toggle tests ✅, full-name-claim tests, migrate to `TokenUserInfo`-based API, add email claim tests
+- `src/test/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImplTest.java` — update registration tests, verify `TokenUserInfo` arguments with `ArgumentCaptor`
 - `src/test/java/com/uynguyen/aegis_id/role/RoleInitializerTest.java` — **NEW**: tests for role seeding + admin bootstrap
 - `src/test/java/com/uynguyen/aegis_id/user/UserControllerTest.java` — add tests for admin role-assignment endpoints
 
@@ -334,7 +437,9 @@ Each phase includes its own tests.
 - **ROLE\_ auto-prefix** — input `ADMIN` → stored as `ROLE_ADMIN`
 - **JWT roles claim defaults to OFF** — opt-in via `JWT_INCLUDE_ROLES_CLAIM=true` env var; runtime-toggleable via Actuator endpoint on management port
 - **Full-name claim in JWT** — include normalized `full_name` in access and refresh tokens for client display convenience
-- **No backward-compat JWT API layer** — removed 2-arg `generateAccessToken` / `generateRefreshToken` overloads; 4-arg signature is now the single contract
+- **No backward-compat JWT API layer** — removed 2-arg `generateAccessToken` / `generateRefreshToken` overloads; `TokenUserInfo`-based signature is now the single contract
+- **`TokenUserInfo` record for token generation** — eliminates parameter explosion; adding a new claim is ~5 lines of production code with no signature cascading
+- **Email claim in JWT** — always included when non-null (not toggleable — email is a core identity field)
 - **Toggle lives in JwtService** — `AtomicBoolean` for thread-safe runtime switching; AuthenticationServiceImpl always passes roles; JwtService decides whether to embed them
 - **Management port separation** — Actuator endpoints served on port 8081, not exposed through main API or JWT auth
 - **Additive-only role seeding** — RoleInitializer never deletes roles; removal is a manual/migration operation
