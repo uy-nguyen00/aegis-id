@@ -108,6 +108,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private void checkUserPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null) {
+            return;
+        }
+
         final boolean isPhoneNumberRegistered =
             this.userRepository.existsByPhoneNumber(phoneNumber);
 

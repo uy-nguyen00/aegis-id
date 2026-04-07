@@ -188,6 +188,27 @@ class AuthenticationControllerTest {
         }
 
         @Test
+        @DisplayName("Should create user when phone number is null")
+        void shouldCreateUser_WhenPhoneNumberIsNull() {
+            RegistrationRequest request = RegistrationRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .phoneNumber(null)
+                .password("Password123!")
+                .confirmPassword("Password123!")
+                .build();
+
+            restTestClient
+                .post()
+                .uri(apiPrefix + "register")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isCreated();
+        }
+
+        @Test
         @DisplayName("Should return 400 Bad Request when email is invalid")
         void shouldReturnBadRequest_WhenEmailIsInvalid() {
             RegistrationRequest request = RegistrationRequest.builder()
@@ -195,6 +216,33 @@ class AuthenticationControllerTest {
                 .lastName("Doe")
                 .email("invalid-email")
                 .phoneNumber("+1234567890")
+                .password("Password123!")
+                .confirmPassword("Password123!")
+                .build();
+
+            restTestClient
+                .post()
+                .uri(apiPrefix + "register")
+                .body(request)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody(ErrorResponse.class)
+                .value(response ->
+                    assertEquals("VALIDATION_ERROR", response.getCode())
+                );
+        }
+
+        @Test
+        @DisplayName(
+            "Should return 400 Bad Request when phone number does not start with plus"
+        )
+        void shouldReturnBadRequest_WhenPhoneNumberHasNoLeadingPlus() {
+            RegistrationRequest request = RegistrationRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .email("john.doe@example.com")
+                .phoneNumber("33123456789")
                 .password("Password123!")
                 .confirmPassword("Password123!")
                 .build();

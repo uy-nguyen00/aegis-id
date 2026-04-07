@@ -38,9 +38,8 @@ public class RegistrationRequest {
     @Schema(example = "example@mail.com")
     private String email;
 
-    @NotBlank(message = "VALIDATION.REGISTRATION.PHONE.BLANK")
     @Pattern(
-        regexp = "^\\+?[1-9]\\d{1,14}$",
+        regexp = "^\\+[1-9]\\d{1,14}$",
         message = "VALIDATION.REGISTRATION.PHONE.FORMAT"
     )
     @Schema(example = "+33123456789")

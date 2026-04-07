@@ -59,7 +59,7 @@
             firstName: val("reg-firstName"),
             lastName: optionalVal("reg-lastName"),
             email: val("reg-email"),
-            phoneNumber: val("reg-phoneNumber"),
+            phoneNumber: optionalVal("reg-phoneNumber"),
             password: val("reg-password"),
             confirmPassword: val("reg-confirmPassword"),
         };
@@ -67,6 +67,11 @@
         // Client-side password match check
         if (data.password !== data.confirmPassword) {
             showFieldError(registerForm, "confirmPassword", "Passwords do not match.");
+            return;
+        }
+
+        if (data.phoneNumber !== null && !data.phoneNumber.startsWith("+")) {
+            showFieldError(registerForm, "phoneNumber", "Phone number must start with '+'.");
             return;
         }
 
