@@ -8,6 +8,7 @@ import com.uynguyen.aegis_id.auth.response.AuthenticationResponse;
 import com.uynguyen.aegis_id.exception.BusinessException;
 import com.uynguyen.aegis_id.exception.ErrorCode;
 import com.uynguyen.aegis_id.security.JwtService;
+import com.uynguyen.aegis_id.security.TokenUserInfo;
 import com.uynguyen.aegis_id.user.User;
 import com.uynguyen.aegis_id.user.UserMapper;
 import com.uynguyen.aegis_id.user.UserRepository;
@@ -64,17 +65,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             .map(GrantedAuthority::getAuthority)
             .toList();
 
-        final String accessToken = this.jwtService.generateAccessToken(
+        final TokenUserInfo userInfo = new TokenUserInfo(
             user.getId(),
             roles,
             user.getFirstName(),
-            user.getLastName()
+            user.getLastName(),
+            user.getEmail()
+        );
+
+        final String accessToken = this.jwtService.generateAccessToken(
+            userInfo
         );
         final String refreshToken = this.jwtService.generateRefreshToken(
-            user.getId(),
-            roles,
-            user.getFirstName(),
-            user.getLastName()
+            userInfo
         );
         final String tokenType = "Bearer";
 
