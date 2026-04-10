@@ -108,10 +108,7 @@ class JwtServiceTest {
             final String otherUserId = "0195f40e-1f9d-7c86-9c2a-cf7e8aefab33";
 
             final String accessToken = jwtService.generateAccessToken(
-                userId,
-                roles,
-                null,
-                null
+                tokenUserInfo(userId, roles, null, null, null)
             );
 
             assertNotNull(accessToken);
@@ -131,10 +128,7 @@ class JwtServiceTest {
         void shouldRejectRefreshTokenForRequestAuthentication() {
             final String userId = "0195f40f-56bd-78fd-b74d-a0eb9aa48612";
             final String refreshToken = jwtService.generateRefreshToken(
-                userId,
-                List.of("ROLE_USER"),
-                null,
-                null
+                tokenUserInfo(userId, List.of("ROLE_USER"), null, null, null)
             );
 
             assertFalse(jwtService.isTokenValid(refreshToken, userId));
@@ -146,10 +140,7 @@ class JwtServiceTest {
             final List<String> roles = List.of("ROLE_USER");
             final String userId = "0195f40f-56bd-78fd-b74d-a0eb9aa48612";
             final String refreshToken = jwtService.generateRefreshToken(
-                userId,
-                roles,
-                null,
-                null
+                tokenUserInfo(userId, roles, null, null, null)
             );
 
             final String newAccessToken = jwtService.refreshAccessToken(
@@ -170,10 +161,13 @@ class JwtServiceTest {
         )
         void shouldThrowWhenRefreshingWithAccessToken() {
             final String accessToken = jwtService.generateAccessToken(
-                "0195f410-0482-7f7c-9c5c-b93578cb2a9d",
-                List.of("ROLE_USER"),
-                null,
-                null
+                tokenUserInfo(
+                    "0195f410-0482-7f7c-9c5c-b93578cb2a9d",
+                    List.of("ROLE_USER"),
+                    null,
+                    null,
+                    null
+                )
             );
 
             final BusinessException exception = assertThrows(
@@ -226,10 +220,13 @@ class JwtServiceTest {
 
             final String expiredRefreshToken =
                 expiredJwtService.generateRefreshToken(
-                    "0195f411-6937-75b4-aea2-a0820d643fe7",
-                    List.of("ROLE_USER"),
-                    null,
-                    null
+                    tokenUserInfo(
+                        "0195f411-6937-75b4-aea2-a0820d643fe7",
+                        List.of("ROLE_USER"),
+                        null,
+                        null,
+                        null
+                    )
                 );
 
             final BusinessException exception = assertThrows(
@@ -253,10 +250,7 @@ class JwtServiceTest {
             final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
 
             final String token = jwtService.generateAccessToken(
-                userId,
-                roles,
-                null,
-                null
+                tokenUserInfo(userId, roles, null, null, null)
             );
 
             assertEquals(roles, jwtService.extractRolesFromToken(token));
@@ -270,10 +264,7 @@ class JwtServiceTest {
             final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
 
             final String token = jwtService.generateAccessToken(
-                userId,
-                roles,
-                null,
-                null
+                tokenUserInfo(userId, roles, null, null, null)
             );
 
             assertTrue(jwtService.extractRolesFromToken(token).isEmpty());
@@ -288,10 +279,7 @@ class JwtServiceTest {
             final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
 
             final String refreshToken = jwtService.generateRefreshToken(
-                userId,
-                List.of("ROLE_USER"),
-                null,
-                null
+                tokenUserInfo(userId, List.of("ROLE_USER"), null, null, null)
             );
 
             assertTrue(
@@ -306,10 +294,7 @@ class JwtServiceTest {
             final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
 
             final String refreshToken = jwtService.generateRefreshToken(
-                userId,
-                List.of("ROLE_USER"),
-                null,
-                null
+                tokenUserInfo(userId, List.of("ROLE_USER"), null, null, null)
             );
             final String newAccessToken = jwtService.refreshAccessToken(
                 refreshToken
@@ -330,19 +315,13 @@ class JwtServiceTest {
 
             jwtService.setIncludeRolesClaim(false);
             final String tokenOff = jwtService.generateAccessToken(
-                userId,
-                roles,
-                null,
-                null
+                tokenUserInfo(userId, roles, null, null, null)
             );
             assertTrue(jwtService.extractRolesFromToken(tokenOff).isEmpty());
 
             jwtService.setIncludeRolesClaim(true);
             final String tokenOn = jwtService.generateAccessToken(
-                userId,
-                roles,
-                null,
-                null
+                tokenUserInfo(userId, roles, null, null, null)
             );
             assertEquals(roles, jwtService.extractRolesFromToken(tokenOn));
         }
@@ -360,10 +339,7 @@ class JwtServiceTest {
             final String userId = "0195f40d-c748-7f9a-a819-cd664f4f4d41";
 
             final String token = jwtService.generateAccessToken(
-                userId,
-                List.of("ROLE_USER"),
-                "John",
-                "Doe"
+                tokenUserInfo(userId, List.of("ROLE_USER"), "John", "Doe", null)
             );
 
             assertEquals(
@@ -380,17 +356,23 @@ class JwtServiceTest {
             final String userId = "0195f40f-56bd-78fd-b74d-a0eb9aa48612";
 
             final String tokenWithOnlyLastName = jwtService.generateAccessToken(
-                userId,
-                List.of("ROLE_USER"),
-                "   ",
-                "  Doe  "
+                tokenUserInfo(
+                    userId,
+                    List.of("ROLE_USER"),
+                    "   ",
+                    "  Doe  ",
+                    null
+                )
             );
             final String tokenWithOnlyFirstName =
                 jwtService.generateAccessToken(
-                    userId,
-                    List.of("ROLE_USER"),
-                    "  John  ",
-                    null
+                    tokenUserInfo(
+                        userId,
+                        List.of("ROLE_USER"),
+                        "  John  ",
+                        null,
+                        null
+                    )
                 );
 
             assertEquals(
@@ -407,10 +389,13 @@ class JwtServiceTest {
         @DisplayName("Should omit full name claim when both names are missing")
         void shouldOmitFullNameClaimWhenBothNamesAreMissing() {
             final String token = jwtService.generateAccessToken(
-                "0195f410-0482-7f7c-9c5c-b93578cb2a9d",
-                List.of("ROLE_USER"),
-                "   ",
-                null
+                tokenUserInfo(
+                    "0195f410-0482-7f7c-9c5c-b93578cb2a9d",
+                    List.of("ROLE_USER"),
+                    "   ",
+                    null,
+                    null
+                )
             );
 
             assertNull(jwtService.extractFullNameFromToken(token));
@@ -423,10 +408,13 @@ class JwtServiceTest {
         void shouldPreserveFullNameClaimWhenRefreshingAccessToken() {
             final String userId = "0195f411-6937-75b4-aea2-a0820d643fe7";
             final String refreshToken = jwtService.generateRefreshToken(
-                userId,
-                List.of("ROLE_USER"),
-                "  John  ",
-                "  Doe  "
+                tokenUserInfo(
+                    userId,
+                    List.of("ROLE_USER"),
+                    "  John  ",
+                    "  Doe  ",
+                    null
+                )
             );
 
             final String newAccessToken = jwtService.refreshAccessToken(
@@ -438,6 +426,113 @@ class JwtServiceTest {
                 jwtService.extractFullNameFromToken(newAccessToken)
             );
         }
+    }
+
+    @Nested
+    @DisplayName("Email Claim Tests")
+    class EmailClaimTests {
+
+        @Test
+        @DisplayName(
+            "Should include email claim in access token when email is present"
+        )
+        void shouldIncludeEmailClaimInAccessTokenWhenEmailIsPresent() {
+            final String userId = "0195f412-3e2f-7e01-a742-630a205e8e37";
+
+            final String accessToken = jwtService.generateAccessToken(
+                tokenUserInfo(
+                    userId,
+                    List.of("ROLE_USER"),
+                    "John",
+                    "Doe",
+                    "john.doe@example.com"
+                )
+            );
+
+            assertEquals(
+                "john.doe@example.com",
+                jwtService.extractEmailFromToken(accessToken)
+            );
+        }
+
+        @Test
+        @DisplayName(
+            "Should include email claim in refresh token when email is present"
+        )
+        void shouldIncludeEmailClaimInRefreshTokenWhenEmailIsPresent() {
+            final String userId = "0195f412-3e2f-7e01-a742-630a205e8e37";
+
+            final String refreshToken = jwtService.generateRefreshToken(
+                tokenUserInfo(
+                    userId,
+                    List.of("ROLE_USER"),
+                    "John",
+                    "Doe",
+                    "john.doe@example.com"
+                )
+            );
+
+            assertEquals(
+                "john.doe@example.com",
+                jwtService.extractEmailFromToken(refreshToken)
+            );
+        }
+
+        @Test
+        @DisplayName("Should omit email claim when email is null or blank")
+        void shouldOmitEmailClaimWhenEmailIsNullOrBlank() {
+            final String userId = "0195f412-3e2f-7e01-a742-630a205e8e37";
+
+            final String nullEmailToken = jwtService.generateAccessToken(
+                tokenUserInfo(userId, List.of("ROLE_USER"), "John", "Doe", null)
+            );
+            final String blankEmailToken = jwtService.generateAccessToken(
+                tokenUserInfo(
+                    userId,
+                    List.of("ROLE_USER"),
+                    "John",
+                    "Doe",
+                    "   "
+                )
+            );
+
+            assertNull(jwtService.extractEmailFromToken(nullEmailToken));
+            assertNull(jwtService.extractEmailFromToken(blankEmailToken));
+        }
+
+        @Test
+        @DisplayName("Should preserve email claim when refreshing access token")
+        void shouldPreserveEmailClaimWhenRefreshingAccessToken() {
+            final String userId = "0195f412-3e2f-7e01-a742-630a205e8e37";
+            final String refreshToken = jwtService.generateRefreshToken(
+                tokenUserInfo(
+                    userId,
+                    List.of("ROLE_USER"),
+                    "John",
+                    "Doe",
+                    "john.doe@example.com"
+                )
+            );
+
+            final String newAccessToken = jwtService.refreshAccessToken(
+                refreshToken
+            );
+
+            assertEquals(
+                "john.doe@example.com",
+                jwtService.extractEmailFromToken(newAccessToken)
+            );
+        }
+    }
+
+    private TokenUserInfo tokenUserInfo(
+        final String userId,
+        final List<String> roles,
+        final String firstName,
+        final String lastName,
+        final String email
+    ) {
+        return new TokenUserInfo(userId, roles, firstName, lastName, email);
     }
 
     private KeyPair generateRsaKeyPair() throws NoSuchAlgorithmException {

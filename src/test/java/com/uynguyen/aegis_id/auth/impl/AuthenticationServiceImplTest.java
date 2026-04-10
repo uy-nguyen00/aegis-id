@@ -2,8 +2,6 @@ package com.uynguyen.aegis_id.auth.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.uynguyen.aegis_id.auth.request.AuthenticationRequest;
@@ -13,6 +11,7 @@ import com.uynguyen.aegis_id.auth.response.AuthenticationResponse;
 import com.uynguyen.aegis_id.exception.BusinessException;
 import com.uynguyen.aegis_id.exception.ErrorCode;
 import com.uynguyen.aegis_id.security.JwtService;
+import com.uynguyen.aegis_id.security.TokenUserInfo;
 import com.uynguyen.aegis_id.user.User;
 import com.uynguyen.aegis_id.user.UserMapper;
 import com.uynguyen.aegis_id.user.UserRepository;
@@ -20,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -234,10 +234,10 @@ class AuthenticationServiceImplTest {
             ).thenReturn(authentication);
 
             when(
-                jwtService.generateAccessToken(any(), any(), any(), any())
+                jwtService.generateAccessToken(any(TokenUserInfo.class))
             ).thenReturn("access-token");
             when(
-                jwtService.generateRefreshToken(any(), any(), any(), any())
+                jwtService.generateRefreshToken(any(TokenUserInfo.class))
             ).thenReturn("refresh-token");
 
             // When
@@ -254,18 +254,33 @@ class AuthenticationServiceImplTest {
             verify(authenticationManager).authenticate(
                 any(UsernamePasswordAuthenticationToken.class)
             );
+
+            final ArgumentCaptor<TokenUserInfo> accessTokenUserInfoCaptor =
+                ArgumentCaptor.forClass(TokenUserInfo.class);
+            final ArgumentCaptor<TokenUserInfo> refreshTokenUserInfoCaptor =
+                ArgumentCaptor.forClass(TokenUserInfo.class);
             verify(jwtService).generateAccessToken(
-                eq("user-id"),
-                any(),
-                eq("John"),
-                eq("Doe")
+                accessTokenUserInfoCaptor.capture()
             );
             verify(jwtService).generateRefreshToken(
-                eq("user-id"),
-                any(),
-                eq("John"),
-                eq("Doe")
+                refreshTokenUserInfoCaptor.capture()
             );
+
+            final TokenUserInfo accessTokenUserInfo =
+                accessTokenUserInfoCaptor.getValue();
+            assertEquals("user-id", accessTokenUserInfo.userId());
+            assertTrue(accessTokenUserInfo.roles().isEmpty());
+            assertEquals("John", accessTokenUserInfo.firstName());
+            assertEquals("Doe", accessTokenUserInfo.lastName());
+            assertEquals("test@example.com", accessTokenUserInfo.email());
+
+            final TokenUserInfo refreshTokenUserInfo =
+                refreshTokenUserInfoCaptor.getValue();
+            assertEquals("user-id", refreshTokenUserInfo.userId());
+            assertTrue(refreshTokenUserInfo.roles().isEmpty());
+            assertEquals("John", refreshTokenUserInfo.firstName());
+            assertEquals("Doe", refreshTokenUserInfo.lastName());
+            assertEquals("test@example.com", refreshTokenUserInfo.email());
         }
 
         @Test
@@ -288,10 +303,7 @@ class AuthenticationServiceImplTest {
             );
 
             verify(jwtService, never()).generateAccessToken(
-                anyString(),
-                any(),
-                any(),
-                any()
+                any(TokenUserInfo.class)
             );
         }
     }
