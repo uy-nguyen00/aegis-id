@@ -13,7 +13,27 @@ This project implements JWT-based authentication using Spring Security, Spring B
 
 ## Setup
 
-### 1. Configure Environment Variables
+### 1. Generate RSA Keys
+
+Before running the application, you must generate the RSA key pair for JWT signing and verification and encode them as Base64:
+
+```sh
+# Generate the RSA private key
+openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
+
+# Derive the public key
+openssl rsa -pubout -in private_key.pem -out public_key.pem
+
+# Extract Base64-encoded DER values (strip PEM headers and newlines)
+grep -v "^-" private_key.pem | tr -d '\n'   # → set as JWT_PRIVATE_KEY in your .env
+grep -v "^-" public_key.pem | tr -d '\n'    # → set as JWT_PUBLIC_KEY in your .env
+```
+
+Copy the output of each command into your `.env` file as `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` respectively. Keep the PEM files out of the repository — they are only needed to generate the Base64 values.
+
+For CI/CD, store the Base64 values as secrets (`JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY`) in your GitHub repository settings and reference them in the workflow environment.
+
+### 2. Configure Environment Variables
 
 Create a `.env` file in the project root with the following properties (for local use only):
 
@@ -45,26 +65,6 @@ MANAGEMENT_PORT=8081
 ```
 
 Adjust the values as needed for your environment.
-
-### 2. Generate RSA Keys
-
-Before running the application, you must generate the RSA key pair for JWT signing and verification and encode them as Base64:
-
-```sh
-# Generate the RSA private key
-openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
-
-# Derive the public key
-openssl rsa -pubout -in private_key.pem -out public_key.pem
-
-# Extract Base64-encoded DER values (strip PEM headers and newlines)
-grep -v "^-" private_key.pem | tr -d '\n'   # → set as JWT_PRIVATE_KEY in your .env
-grep -v "^-" public_key.pem | tr -d '\n'    # → set as JWT_PUBLIC_KEY in your .env
-```
-
-Copy the output of each command into your `.env` file as `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` respectively. Keep the PEM files out of the repository — they are only needed to generate the Base64 values.
-
-For CI/CD, store the Base64 values as secrets (`JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY`) in your GitHub repository settings and reference them in the workflow environment.
 
 ### 3. Start Services
 
