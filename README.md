@@ -100,48 +100,27 @@ Run the tests using the command line:
 ./mvnw test
 ```
 
-Run only unit tests:
+This project uses Maven naming conventions in a single test source set:
+
+- Unit tests: `*Test` / `*Tests` (run by Surefire in the `test` phase)
+- Integration tests: `*IT` (run by Failsafe in the `integration-test`/`verify` phases)
+
+Run unit + integration tests:
 
 ```sh
-./mvnw -Dtest='*Test,!AegisIdApplicationTests,!SmokeTest,!*ControllerTest,!SecurityConfig*ProfileTest' test
+./mvnw verify
 ```
 
 Run only integration tests:
 
 ```sh
-./mvnw -Dtest='AegisIdApplicationTests,SmokeTest,*ControllerTest,SecurityConfig*ProfileTest' test
+./mvnw -DskipTests failsafe:integration-test failsafe:verify
 ```
 
 Test sources are organized under:
 
 - `src/test/java`: Java test classes
 - `src/test/resources`: test configuration files (`application-dev.yml`, `application-prod.yml`)
-
-There is currently a single test source set. Unit and integration tests are differentiated by annotations and scope.
-
-### Unit tests
-
-Unit tests do not bootstrap the full Spring application context. They are plain JUnit tests and/or Mockito-based tests (for example `@ExtendWith(MockitoExtension.class)`).
-
-- `src/test/java/com/uynguyen/aegis_id/auth/impl/AuthenticationServiceImplTest.java`
-- `src/test/java/com/uynguyen/aegis_id/user/impl/UserServiceImplTest.java`
-- `src/test/java/com/uynguyen/aegis_id/security/JwtFilterTest.java`
-- `src/test/java/com/uynguyen/aegis_id/security/JwtServiceTest.java`
-- `src/test/java/com/uynguyen/aegis_id/security/SecurityConfigUnitTest.java`
-- `src/test/java/com/uynguyen/aegis_id/auth/request/AuthenticationRequestTest.java`
-- `src/test/java/com/uynguyen/aegis_id/auth/request/RefreshTokenRequestTest.java`
-- `src/test/java/com/uynguyen/aegis_id/auth/request/RegistrationRequestTest.java`
-
-### Integration tests
-
-Integration tests bootstrap Spring via `@SpringBootTest` (and API-focused ones also use `@AutoConfigureRestTestClient`).
-
-- `src/test/java/com/uynguyen/aegis_id/AegisIdApplicationTests.java`
-- `src/test/java/com/uynguyen/aegis_id/SmokeTest.java`
-- `src/test/java/com/uynguyen/aegis_id/auth/AuthenticationControllerTest.java`
-- `src/test/java/com/uynguyen/aegis_id/user/UserControllerTest.java`
-- `src/test/java/com/uynguyen/aegis_id/security/SecurityConfigDevProfileTest.java`
-- `src/test/java/com/uynguyen/aegis_id/security/SecurityConfigProdProfileTest.java`
 
 ## Management Endpoints
 
