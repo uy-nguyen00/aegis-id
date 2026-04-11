@@ -30,7 +30,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 @ActiveProfiles("prod")
-class UserControllerTest {
+class UserControllerIT {
 
     @Autowired
     private RestTestClient restTestClient;

@@ -1,7 +1,5 @@
 package com.uynguyen.aegis_id.security;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,26 +11,16 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
-@ActiveProfiles("dev")
-@DisplayName("SecurityConfig - dev profile")
-class SecurityConfigDevProfileTest {
+@ActiveProfiles("prod")
+@DisplayName("SecurityConfig - prod profile")
+class SecurityConfigProdProfileIT {
 
     @Autowired
     private RestTestClient restTestClient;
 
     @Test
-    @DisplayName("Should allow root path in dev profile")
-    void shouldAllowRootPathInDevProfile() {
-        restTestClient
-            .get()
-            .uri("/")
-            .exchange()
-            .expectStatus()
-            .isOk()
-            .expectBody(String.class)
-            .value(body -> {
-                assertTrue(body.contains("Welcome to"));
-                assertTrue(body.contains("API Docs"));
-            });
+    @DisplayName("Should require authentication for root path in prod profile")
+    void shouldRequireAuthenticationForRootPathInProdProfile() {
+        restTestClient.get().uri("/").exchange().expectStatus().isForbidden();
     }
 }
