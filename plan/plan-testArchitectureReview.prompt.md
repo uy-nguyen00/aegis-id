@@ -71,7 +71,7 @@ Unit tests remain as `*Test` / `*Tests` under `src/test/java/`:
 
 ---
 
-## Phase 2: Testcontainers Migration (Integration Tests)
+## Phase 2: Testcontainers Migration (Integration Tests) (Completed)
 
 ### Step 5 — Add Testcontainers dependency (_depends on step 2_)
 
@@ -98,6 +98,21 @@ Create `src/test/java/.../testsupport/PostgresTestContainerConfig.java`:
 ### Step 8 — Update existing integration tests (_depends on step 6_)
 
 - Add `@Import(PostgresTestContainerConfig.class)` to each integration test, or create a shared `@SpringBootTest` base annotation
+
+### Phase 2 Completion Status
+
+- Completed in branch `chore/test-architecture-phase2`
+- Validation passed:
+    - `./mvnw clean test` (unit only)
+    - `./mvnw clean verify` (unit + integration on Testcontainers PostgreSQL)
+
+### Problems Encountered and How They Were Solved
+
+1. Problem: Testcontainers dependencies were added without project-level version management, causing unresolved dependency versions in Maven.
+    - Solution: Imported `org.testcontainers:testcontainers-bom` in `dependencyManagement` and pinned `testcontainers.version`.
+
+2. Problem: Eager static container startup in `PostgresTestContainerConfig` caused unstable Docker environment detection during context bootstrap.
+    - Solution: Kept a singleton `PostgreSQLContainer` instance but removed manual `start()` so Spring Boot Testcontainers lifecycle starts and manages it via `@ServiceConnection`.
 
 ---
 
