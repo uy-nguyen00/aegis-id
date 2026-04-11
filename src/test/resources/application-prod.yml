@@ -1,6 +1,8 @@
 spring:
     application:
         name: aegis-id-test
+    main:
+        register-shutdown-hook: false
     jpa:
         hibernate:
             ddl-auto: create-drop
