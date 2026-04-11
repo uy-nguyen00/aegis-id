@@ -10,7 +10,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
 @SpringBootTest
-class SmokeTest {
+class SmokeIT {
 
     @Autowired(required = false)
     private HomeController homeController;

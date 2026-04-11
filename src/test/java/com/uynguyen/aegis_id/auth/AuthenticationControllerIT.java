@@ -27,7 +27,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 @ActiveProfiles("prod")
-class AuthenticationControllerTest {
+class AuthenticationControllerIT {
 
     @Autowired
     private RestTestClient restTestClient;
