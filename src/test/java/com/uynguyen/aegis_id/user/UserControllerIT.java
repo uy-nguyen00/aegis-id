@@ -11,6 +11,7 @@ import com.uynguyen.aegis_id.exception.BusinessException;
 import com.uynguyen.aegis_id.exception.ErrorCode;
 import com.uynguyen.aegis_id.handler.ErrorResponse;
 import com.uynguyen.aegis_id.security.JwtService;
+import com.uynguyen.aegis_id.testsupport.PostgresTestContainerConfig;
 import com.uynguyen.aegis_id.user.request.ChangePasswordRequest;
 import com.uynguyen.aegis_id.user.request.ProfileUpdateRequest;
 import java.time.LocalDate;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.client.RestTestClient;
@@ -30,7 +32,16 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 @ActiveProfiles("prod")
+@Import(PostgresTestContainerConfig.class)
 class UserControllerIT {
+
+    private static final String API_PREFIX = "/api/v1/users/";
+    private static final String TOKEN = "valid-token";
+    private static final String USER_ID = "user-id";
+    private static final String USER_EMAIL = "user@example.com";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String NEW_PASSWORD = "newPass";
 
     @Autowired
     private RestTestClient restTestClient;
@@ -44,26 +55,20 @@ class UserControllerIT {
     @MockitoBean
     private JwtService jwtService;
 
-    private final String apiPrefix = "/api/v1/users/";
-    private final String token = "valid-token";
-    private final String userId = "user-id";
-    private final String userEmail = "user@example.com";
-    private User user;
-
     @BeforeEach
     void setUp() {
-        this.user = User.builder().id(userId).email(userEmail).build();
+        User user = User.builder().id(USER_ID).email(USER_EMAIL).build();
 
-        when(this.jwtService.extractUserIdFromToken(token)).thenReturn(userId);
-        when(this.jwtService.isTokenValid(token, userId)).thenReturn(true);
-        when(this.userRepository.findWithRolesById(userId)).thenReturn(
-            Optional.of(this.user)
+        when(this.jwtService.extractUserIdFromToken(TOKEN)).thenReturn(USER_ID);
+        when(this.jwtService.isTokenValid(TOKEN, USER_ID)).thenReturn(true);
+        when(this.userRepository.findWithRolesById(USER_ID)).thenReturn(
+            Optional.of(user)
         );
     }
 
     @Test
     @DisplayName("Should return 403 Forbidden when token is invalid")
-    void shouldReturnForbidden_WhenTokenIsInvalid() {
+    void shouldReturnForbiddenWhenTokenIsInvalid() {
         String invalidToken = "invalid-token";
         ProfileUpdateRequest request = ProfileUpdateRequest.builder()
             .firstName("John")
@@ -73,8 +78,8 @@ class UserControllerIT {
 
         restTestClient
             .patch()
-            .uri(apiPrefix + "me")
-            .header("Authorization", "Bearer " + invalidToken)
+            .uri(API_PREFIX + "me")
+            .header(AUTHORIZATION_HEADER, BEARER_PREFIX + invalidToken)
             .body(request)
             .exchange()
             .expectStatus()
@@ -83,7 +88,7 @@ class UserControllerIT {
 
     @Test
     @DisplayName("Should return 403 Forbidden when no token is provided")
-    void shouldReturnForbidden_WhenNoTokenIsProvided() {
+    void shouldReturnForbiddenWhenNoTokenIsProvided() {
         ProfileUpdateRequest request = ProfileUpdateRequest.builder()
             .firstName("John")
             .lastName("Doe")
@@ -92,7 +97,7 @@ class UserControllerIT {
 
         restTestClient
             .patch()
-            .uri(apiPrefix + "me")
+            .uri(API_PREFIX + "me")
             .body(request)
             .exchange()
             .expectStatus()
@@ -105,7 +110,7 @@ class UserControllerIT {
 
         @Test
         @DisplayName("Should retrieve user profile successfully")
-        void shouldUpdateProfile_WhenRequestIsValid() {
+        void shouldUpdateProfileWhenRequestIsValid() {
             ProfileUpdateRequest request = ProfileUpdateRequest.builder()
                 .firstName("John")
                 .lastName("Doe")
@@ -114,8 +119,8 @@ class UserControllerIT {
 
             restTestClient
                 .patch()
-                .uri(apiPrefix + "me")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -123,13 +128,13 @@ class UserControllerIT {
 
             verify(userService).updateProfileInfo(
                 any(ProfileUpdateRequest.class),
-                eq("user-id")
+                eq(USER_ID)
             );
         }
 
         @Test
         @DisplayName("Should update profile when last name is null")
-        void shouldUpdateProfile_WhenLastNameIsNull() {
+        void shouldUpdateProfileWhenLastNameIsNull() {
             ProfileUpdateRequest request = ProfileUpdateRequest.builder()
                 .firstName("John")
                 .lastName(null)
@@ -138,8 +143,8 @@ class UserControllerIT {
 
             restTestClient
                 .patch()
-                .uri(apiPrefix + "me")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -147,7 +152,7 @@ class UserControllerIT {
 
             verify(userService).updateProfileInfo(
                 any(ProfileUpdateRequest.class),
-                eq("user-id")
+                eq(USER_ID)
             );
         }
 
@@ -155,7 +160,7 @@ class UserControllerIT {
         @DisplayName(
             "Should return 400 Bad Request when request body is invalid"
         )
-        void shouldReturnBadRequest_WhenRequestBodyIsInvalid() {
+        void shouldReturnBadRequestWhenRequestBodyIsInvalid() {
             ProfileUpdateRequest request = ProfileUpdateRequest.builder()
                 .firstName("") // Invalid: empty
                 .lastName("Doe")
@@ -164,8 +169,8 @@ class UserControllerIT {
 
             restTestClient
                 .patch()
-                .uri(apiPrefix + "me")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -183,17 +188,17 @@ class UserControllerIT {
 
         @Test
         @DisplayName("Should change password successfully")
-        void shouldChangePassword_WhenRequestIsValid() {
+        void shouldChangePasswordWhenRequestIsValid() {
             ChangePasswordRequest request = ChangePasswordRequest.builder()
                 .oldPassword("oldPass")
-                .newPassword("newPass")
-                .confirmNewPassword("newPass")
+                .newPassword(NEW_PASSWORD)
+                .confirmNewPassword(NEW_PASSWORD)
                 .build();
 
             restTestClient
                 .post()
-                .uri(apiPrefix + "me/password")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me/password")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -201,7 +206,7 @@ class UserControllerIT {
 
             verify(userService).changePassword(
                 any(ChangePasswordRequest.class),
-                eq("user-id")
+                eq(USER_ID)
             );
         }
 
@@ -209,24 +214,21 @@ class UserControllerIT {
         @DisplayName(
             "Should return 400 Bad Request when passwords do not match"
         )
-        void shouldReturnBadRequest_WhenPasswordsDoNotMatch() {
+        void shouldReturnBadRequestWhenPasswordsDoNotMatch() {
             ChangePasswordRequest request = ChangePasswordRequest.builder()
                 .oldPassword("oldPass")
-                .newPassword("newPass")
+                .newPassword(NEW_PASSWORD)
                 .confirmNewPassword("mismatch")
                 .build();
 
             doThrow(new BusinessException(ErrorCode.CHANGE_PASSWORD_MISMATCH))
                 .when(userService)
-                .changePassword(
-                    any(ChangePasswordRequest.class),
-                    eq("user-id")
-                );
+                .changePassword(any(ChangePasswordRequest.class), eq(USER_ID));
 
             restTestClient
                 .post()
-                .uri(apiPrefix + "me/password")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me/password")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .body(request)
                 .exchange()
                 .expectStatus()
@@ -247,33 +249,33 @@ class UserControllerIT {
 
         @Test
         @DisplayName("Should deactivate account successfully")
-        void shouldDeactivateAccount_WhenRequestIsValid() {
+        void shouldDeactivateAccountWhenRequestIsValid() {
             restTestClient
                 .patch()
-                .uri(apiPrefix + "me/deactivate")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me/deactivate")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .exchange()
                 .expectStatus()
                 .isNoContent();
 
-            verify(userService).deactivateAccount("user-id");
+            verify(userService).deactivateAccount(USER_ID);
         }
 
         @Test
         @DisplayName(
             "Should return 400 Bad Request when account is already deactivated"
         )
-        void shouldReturnBadRequest_WhenAccountAlreadyDeactivated() {
+        void shouldReturnBadRequestWhenAccountAlreadyDeactivated() {
             doThrow(
                 new BusinessException(ErrorCode.ACCOUNT_ALREADY_DEACTIVATED)
             )
                 .when(userService)
-                .deactivateAccount("user-id");
+                .deactivateAccount(USER_ID);
 
             restTestClient
                 .patch()
-                .uri(apiPrefix + "me/deactivate")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me/deactivate")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
@@ -293,31 +295,31 @@ class UserControllerIT {
 
         @Test
         @DisplayName("Should reactivate account successfully")
-        void shouldReactivateAccount_WhenRequestIsValid() {
+        void shouldReactivateAccountWhenRequestIsValid() {
             restTestClient
                 .patch()
-                .uri(apiPrefix + "me/reactivate")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me/reactivate")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .exchange()
                 .expectStatus()
                 .isNoContent();
 
-            verify(userService).reactivateAccount("user-id");
+            verify(userService).reactivateAccount(USER_ID);
         }
 
         @Test
         @DisplayName(
             "Should return 400 Bad Request when account is already activated"
         )
-        void shouldReturnBadRequest_WhenAccountAlreadyActivated() {
+        void shouldReturnBadRequestWhenAccountAlreadyActivated() {
             doThrow(new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED))
                 .when(userService)
-                .reactivateAccount("user-id");
+                .reactivateAccount(USER_ID);
 
             restTestClient
                 .patch()
-                .uri(apiPrefix + "me/reactivate")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me/reactivate")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .exchange()
                 .expectStatus()
                 .isBadRequest()
@@ -337,31 +339,31 @@ class UserControllerIT {
 
         @Test
         @DisplayName("Should delete account successfully")
-        void shouldDeleteAccount_WhenRequestIsValid() {
+        void shouldDeleteAccountWhenRequestIsValid() {
             restTestClient
                 .delete()
-                .uri(apiPrefix + "me")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .exchange()
                 .expectStatus()
                 .isNoContent();
 
-            verify(userService).deleteAccount("user-id");
+            verify(userService).deleteAccount(USER_ID);
         }
 
         @Test
         @DisplayName(
             "Should return 400 Bad Request when account is already activated"
         )
-        void shouldReturnBadRequest_WhenAccountAlreadyActivated() {
+        void shouldReturnBadRequestWhenAccountAlreadyActivated() {
             doThrow(new BusinessException(ErrorCode.ACCOUNT_ALREADY_ACTIVATED))
                 .when(userService)
-                .deleteAccount("user-id");
+                .deleteAccount(USER_ID);
 
             restTestClient
                 .delete()
-                .uri(apiPrefix + "me")
-                .header("Authorization", "Bearer " + token)
+                .uri(API_PREFIX + "me")
+                .header(AUTHORIZATION_HEADER, BEARER_PREFIX + TOKEN)
                 .exchange()
                 .expectStatus()
                 .isBadRequest()

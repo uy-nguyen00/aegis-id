@@ -2,14 +2,17 @@ package com.uynguyen.aegis_id;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.uynguyen.aegis_id.testsupport.PostgresTestContainerConfig;
 import com.uynguyen.aegis_id.user.UserController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
 @SpringBootTest
+@Import(PostgresTestContainerConfig.class)
 class SmokeIT {
 
     @Autowired(required = false)

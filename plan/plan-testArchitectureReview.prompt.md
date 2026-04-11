@@ -71,9 +71,9 @@ Unit tests remain as `*Test` / `*Tests` under `src/test/java/`:
 
 ---
 
-## Phase 2: Testcontainers Migration (Integration Tests)
+## Phase 2: Testcontainers Migration (Integration Tests) (Completed)
 
-### Step 5 — Add Testcontainers dependency (_depends on step 2_)
+### Step 6 — Add Testcontainers dependency (_depends on step 2_)
 
 Add to `pom.xml`:
 
@@ -81,7 +81,7 @@ Add to `pom.xml`:
 - `org.testcontainers:junit-jupiter` (test scope)
 - `org.springframework.boot:spring-boot-testcontainers` (test scope)
 
-### Step 6 — Create shared Testcontainers config (_depends on step 5_)
+### Step 7 — Create shared Testcontainers config (_depends on step 6_)
 
 Create `src/test/java/.../testsupport/PostgresTestContainerConfig.java`:
 
@@ -89,21 +89,36 @@ Create `src/test/java/.../testsupport/PostgresTestContainerConfig.java`:
 - Single shared container across all integration tests (singleton pattern) for performance
 - Remove H2 from `pom.xml` test dependency
 
-### Step 7 — Update integration test configs (_depends on step 6_)
+### Step 8 — Update integration test configs (_depends on step 7_)
 
 - Remove H2 datasource config from `application-dev.yml` and `application-prod.yml` in `src/test/resources`
 - Testcontainers + `@ServiceConnection` auto-configures datasource
 - Keep `hibernate.ddl-auto: create-drop` for schema setup
 
-### Step 8 — Update existing integration tests (_depends on step 6_)
+### Step 9 — Update existing integration tests (_depends on step 7_)
 
 - Add `@Import(PostgresTestContainerConfig.class)` to each integration test, or create a shared `@SpringBootTest` base annotation
+
+### Phase 2 Completion Status
+
+- Completed in branch `chore/test-architecture-phase2`
+- Validation passed:
+    - `./mvnw clean test` (unit only)
+    - `./mvnw clean verify` (unit + integration on Testcontainers PostgreSQL)
+
+### Problems Encountered and How They Were Solved
+
+1. Problem: Testcontainers dependencies were added without project-level version management, causing unresolved dependency versions in Maven.
+    - Solution: Imported `org.testcontainers:testcontainers-bom` in `dependencyManagement` and pinned `testcontainers.version`.
+
+2. Problem: Eager static container startup in `PostgresTestContainerConfig` caused unstable Docker environment detection during context bootstrap.
+    - Solution: Kept a singleton `PostgreSQLContainer` instance but removed manual `start()` so Spring Boot Testcontainers lifecycle starts and manages it via `@ServiceConnection`.
 
 ---
 
 ## Phase 3: Coverage Gap Fixes
 
-### Step 9 — Add `UserMapper` unit test (_parallel with phase 1-2_)
+### Step 10 — Add `UserMapper` unit test (_parallel with phase 1-2_)
 
 Create `src/test/java/.../user/UserMapperTest.java`:
 
@@ -112,7 +127,7 @@ Create `src/test/java/.../user/UserMapperTest.java`:
 - Test null input handling
 - Test partial field mappings
 
-### Step 10 — Add `ApplicationExceptionHandler` test (_parallel with phase 1-2_)
+### Step 11 — Add `ApplicationExceptionHandler` test (_parallel with phase 1-2_)
 
 Create `src/test/java/.../handler/ApplicationExceptionHandlerTest.java`:
 
@@ -125,7 +140,7 @@ Create `src/test/java/.../handler/ApplicationExceptionHandlerTest.java`:
     - `ConstraintViolationException` → path-variable/query-param validation
     - Any other `@ExceptionHandler` annotated methods with uncovered paths
 
-### Step 11 — Improve `ApplicationAuditorAware` test (_parallel_)
+### Step 12 — Improve `ApplicationAuditorAware` test (_parallel_)
 
 Create `src/test/java/.../config/ApplicationAuditorAwareTest.java`:
 
@@ -135,15 +150,15 @@ Create `src/test/java/.../config/ApplicationAuditorAwareTest.java`:
 - Test when authentication is null → returns empty Optional
 - Test when principal is not a User instance → returns empty Optional
 
-### Step 12 — Add `UserMapper` to JaCoCo exclusions (_if mapper is trivial_)
+### Step 13 — Add `UserMapper` to JaCoCo exclusions (_if mapper is trivial_)
 
-Decision: After reviewing UserMapper, if it's a simple field-copying mapper, consider excluding from coverage instead of testing. Otherwise, write the test (step 9).
+Decision: After reviewing UserMapper, if it's a simple field-copying mapper, consider excluding from coverage instead of testing. Otherwise, write the test (step 10).
 
 ---
 
 ## Phase 4: JaCoCo Exclusion Refinements
 
-### Step 13 — Update JaCoCo and Sonar exclusions
+### Step 14 — Update JaCoCo and Sonar exclusions
 
 Add config classes to exclusions in `pom.xml`:
 
@@ -158,7 +173,7 @@ Also consider excluding:
 - `**/exception/ErrorCode.java` — enum with static data (100% via side effects, but not testing logic)
 - Entity/DTO Lombok-generated code — User entity shows 71% missed, mostly Lombok constructors/getters
 
-### Step 14 — Add Lombok JaCoCo exclusion via `lombok.config`
+### Step 15 — Add Lombok JaCoCo exclusion via `lombok.config`
 
 Create/update `lombok.config` in project root:
 
@@ -172,11 +187,11 @@ This makes JaCoCo automatically skip Lombok-generated code (getters, setters, co
 
 ## Phase 5: Test Quality Improvements
 
-### Step 15 — Consolidate `AegisIdApplicationIT` and `SmokeIT`
+### Step 16 — Consolidate `AegisIdApplicationIT` and `SmokeIT`
 
 Both are `@SpringBootTest` tests that verify context loading. `SmokeIT` checks conditional beans, `AegisIdApplicationIT` just verifies context loads. Consider merging into one file to reduce integration test startup overhead.
 
-### Step 16 — Clean up phantom test report
+### Step 17 — Clean up phantom test report
 
 `RedirectUriValidatorTest` appears in surefire reports but source file doesn't exist. Clean up stale test reports from `target/surefire-reports/`.
 

@@ -1,17 +1,20 @@
 package com.uynguyen.aegis_id.security;
 
+import com.uynguyen.aegis_id.testsupport.PostgresTestContainerConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 @ActiveProfiles("prod")
+@Import(PostgresTestContainerConfig.class)
 @DisplayName("SecurityConfig - prod profile")
 class SecurityConfigProdProfileIT {
 
