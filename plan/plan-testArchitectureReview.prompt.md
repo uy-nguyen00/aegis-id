@@ -55,8 +55,8 @@ Unit tests remain as `*Test` / `*Tests` under `src/test/java/`:
 
 - Completed in branch `chore/test-architecture-phase1`
 - Validation passed:
-  - `./mvnw clean test` (unit only)
-  - `./mvnw clean verify` (unit + integration)
+    - `./mvnw clean test` (unit only)
+    - `./mvnw clean verify` (unit + integration)
 
 ### Problems Encountered and How They Were Solved
 
