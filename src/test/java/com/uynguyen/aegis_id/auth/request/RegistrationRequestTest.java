@@ -2,6 +2,7 @@ package com.uynguyen.aegis_id.auth.request;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.uynguyen.aegis_id.testsupport.ValidationTestSupport;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.util.Set;
@@ -12,15 +13,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
 @DisplayName("RegistrationRequest Tests")
 class RegistrationRequestTest {
 
-    @Autowired
-    private Validator validator;
+    private static final Validator validator =
+        ValidationTestSupport.createValidatorWithDisposableEmailSupport();
 
     private RegistrationRequest createValidRequest() {
         return RegistrationRequest.builder()

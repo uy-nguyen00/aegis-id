@@ -26,3 +26,4 @@ app:
             issuer: aegis-id
             audience: aegis-api
             include-roles-claim: true
+        disposable-email-domains: 10minutemail,20minutemail,33mail,5ymail,anonbox,guerrillamail,mailinator,maildrop,mailnesia,moakt,my10minutemail,throwawaymail,trashmail,temp-mail,tempmail,truemail,yopmail
