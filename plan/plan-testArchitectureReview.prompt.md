@@ -176,7 +176,7 @@ Decision: After reviewing UserMapper, if it's a simple field-copying mapper, con
 
 ---
 
-## Phase 4: JaCoCo Exclusion Refinements
+## Phase 4: JaCoCo Exclusion Refinements (Completed)
 
 ### Step 14 — Update JaCoCo and Sonar exclusions
 
@@ -202,6 +202,46 @@ lombok.addLombokGeneratedAnnotation = true
 ```
 
 This makes JaCoCo automatically skip Lombok-generated code (getters, setters, constructors, builders, equals/hashCode). This will fix the User entity's 71% missed coverage being a false negative.
+
+### Phase 4 Completion Status
+
+- Implementation completed in branch `chore/test-architecture-phase4`.
+- Updated `pom.xml` to add `<jacoco.excludes>` and expanded `<sonar.coverage.exclusions>` with:
+    - `**/*Application`
+    - `**/JwtConfigEndpoint`
+    - `**/config/OpenApiConfig`
+    - `**/config/JpaConfig`
+    - `**/config/BeansConfig`
+    - `**/exception/ErrorCode`
+- Updated JaCoCo plugin report excludes in `pom.xml` to class patterns (`.class`).
+- Added root `lombok.config`:
+    - `config.stopBubbling = true`
+    - `lombok.addLombokGeneratedAnnotation = true`
+
+### Phase 4 Validation Status
+
+- `./mvnw -Pcoverage -DskipITs clean verify` → **BUILD SUCCESS**.
+- First attempt: `./mvnw -Pcoverage verify` → **BUILD FAILURE** (Docker unavailable for Testcontainers).
+- Retry after enabling Docker: `./mvnw -Pcoverage verify` → **BUILD SUCCESS**.
+- Surefire (unit) summary from successful full verify run:
+    - Tests run: 151
+    - Failures: 0
+    - Errors: 0
+    - Skipped: 0
+- Failsafe (integration) summary from successful full verify run:
+    - Tests run: 31
+    - Failures: 0
+    - Errors: 0
+    - Skipped: 0
+- JaCoCo report generated successfully (`target/site/jacoco/jacoco.xml`) with excluded classes applied.
+
+### Problems Encountered and How They Were Solved
+
+1. Problem: JaCoCo excludes were first written as `*.java` patterns, which JaCoCo does not use for bytecode filtering.
+    - Solution: Switched JaCoCo exclusions to `*.class` in both `<jacoco.excludes>` and plugin `<excludes>` while keeping Sonar exclusions as source-file (`*.java`) patterns.
+
+2. Problem: Initial full coverage verify failed because Testcontainers could not find a Docker environment (`Previous attempts to find a Docker environment failed. Will not retry.`), causing ApplicationContext startup errors across integration tests.
+    - Solution: Enabled Docker and reran full coverage verification. Integration tests then passed and full coverage build completed successfully.
 
 ---
 

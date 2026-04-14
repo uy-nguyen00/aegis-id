@@ -33,9 +33,12 @@
 		<testcontainers.version>1.21.4</testcontainers.version>
         <sonar.projectKey>uy-nguyen00_aegis-id</sonar.projectKey>
 		<sonar.organization>uy-ng00</sonar.organization>
+		<jacoco.excludes>
+			**/*Application.class,**/JwtConfigEndpoint.class,**/config/OpenApiConfig.class,**/config/JpaConfig.class,**/config/BeansConfig.class,**/exception/ErrorCode.class
+		</jacoco.excludes>
 
 		<sonar.coverage.exclusions>
-			**/*Application.java,**/JwtConfigEndpoint.java
+			**/*Application.java,**/JwtConfigEndpoint.java,**/config/OpenApiConfig.java,**/config/JpaConfig.java,**/config/BeansConfig.java,**/exception/ErrorCode.java
 		</sonar.coverage.exclusions>
 
         <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
@@ -262,8 +265,12 @@
 									</formats>
 
 									<excludes>
-										<exclude>**/*Application.java</exclude>
-										<exclude>**/JwtConfigEndpoint.java</exclude>
+										<exclude>**/*Application.class</exclude>
+										<exclude>**/JwtConfigEndpoint.class</exclude>
+										<exclude>**/config/OpenApiConfig.class</exclude>
+										<exclude>**/config/JpaConfig.class</exclude>
+										<exclude>**/config/BeansConfig.class</exclude>
+										<exclude>**/exception/ErrorCode.class</exclude>
 									</excludes>
 								</configuration>
 							</execution>
