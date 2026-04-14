@@ -245,7 +245,7 @@ This makes JaCoCo automatically skip Lombok-generated code (getters, setters, co
 
 ---
 
-## Phase 5: Test Quality Improvements
+## Phase 5: Test Quality Improvements (Completed)
 
 ### Step 16 — Consolidate `AegisIdApplicationIT` and `SmokeIT`
 
@@ -254,6 +254,26 @@ Both are `@SpringBootTest` tests that verify context loading. `SmokeIT` checks c
 ### Step 17 — Clean up phantom test report
 
 `RedirectUriValidatorTest` appears in surefire reports but source file doesn't exist. Clean up stale test reports from `target/surefire-reports/`.
+
+### Phase 5 Completion Status
+
+- Completed in branch `chore/test-architecture-phase5`.
+- Implemented:
+    - Removed `src/test/java/com/uynguyen/aegis_id/AegisIdApplicationIT.java` and consolidated context-load coverage into `SmokeIT`.
+    - Regenerated test reports via `./mvnw clean verify` so stale report artifacts are removed before report inspection.
+    - Verified no `RedirectUriValidatorTest` artifact exists in `target/surefire-reports/`.
+- Validation passed:
+    - `./mvnw clean verify` → **BUILD SUCCESS**.
+    - Surefire (unit) summary: 151 tests, 0 failures, 0 errors.
+    - Failsafe (integration) summary: 30 tests, 0 failures, 0 errors.
+
+### Problems Encountered and How They Were Solved
+
+1. Problem: Removing `AegisIdApplicationIT` could accidentally drop basic context bootstrap coverage.
+    - Solution: Kept `SmokeIT#contextLoads()` as the consolidated context-load suite; it still asserts critical bean wiring while validating context startup.
+
+2. Problem: The `RedirectUriValidatorTest` phantom could not be reproduced from source because no matching test class exists.
+    - Solution: Treated this as stale report state, ran `clean verify` to rebuild reports from scratch, and confirmed the phantom entry does not appear in regenerated surefire outputs.
 
 ---
 
@@ -278,7 +298,6 @@ Both are `@SpringBootTest` tests that verify context loading. `SmokeIT` checks c
 
 **Current integration tests (`*IT` in `src/test/java/`):**
 
-- `src/test/java/com/uynguyen/aegis_id/AegisIdApplicationIT.java`
 - `src/test/java/com/uynguyen/aegis_id/SmokeIT.java`
 - `src/test/java/com/uynguyen/aegis_id/auth/AuthenticationControllerIT.java`
 - `src/test/java/com/uynguyen/aegis_id/security/SecurityConfigDevProfileIT.java`
@@ -316,6 +335,10 @@ Both are `@SpringBootTest` tests that verify context loading. `SmokeIT` checks c
 9. ✅ Phase 3 validation executed:
     - `./mvnw -Dtest=UserMapperTest,ApplicationExceptionHandlerTest,ApplicationAuditorAwareTest test` → 23 tests, 0 failures
     - `./mvnw test` → 151 tests, 0 failures
+10. ✅ Phase 5 validation executed:
+    - `./mvnw clean verify` → BUILD SUCCESS
+    - Failsafe summary: completed 30, failures 0, errors 0
+    - `target/surefire-reports/` contains no `RedirectUriValidatorTest` report artifact
 
 ---
 
