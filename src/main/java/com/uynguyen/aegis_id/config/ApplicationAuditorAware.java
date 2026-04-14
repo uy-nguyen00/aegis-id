@@ -22,7 +22,11 @@ public class ApplicationAuditorAware implements AuditorAware<String> {
             return Optional.empty();
         }
 
-        final User user = (User) authentication.getPrincipal();
+        final Object principal = authentication.getPrincipal();
+        if (!(principal instanceof User user)) {
+            return Optional.empty();
+        }
+
         return Optional.ofNullable(user.getId());
     }
 }

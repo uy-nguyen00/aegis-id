@@ -116,7 +116,7 @@ Create `src/test/java/.../testsupport/PostgresTestContainerConfig.java`:
 
 ---
 
-## Phase 3: Coverage Gap Fixes
+## Phase 3: Coverage Gap Fixes (Completed)
 
 ### Step 10 — Add `UserMapper` unit test (_parallel with phase 1-2_)
 
@@ -153,6 +153,26 @@ Create `src/test/java/.../config/ApplicationAuditorAwareTest.java`:
 ### Step 13 — Add `UserMapper` to JaCoCo exclusions (_if mapper is trivial_)
 
 Decision: After reviewing UserMapper, if it's a simple field-copying mapper, consider excluding from coverage instead of testing. Otherwise, write the test (step 10).
+
+### Phase 3 Completion Status
+
+- Completed in branch `chore/test-architecture-phase3`
+- Implemented:
+    - `src/test/java/com/uynguyen/aegis_id/user/UserMapperTest.java`
+    - `src/test/java/com/uynguyen/aegis_id/handler/ApplicationExceptionHandlerTest.java`
+    - `src/test/java/com/uynguyen/aegis_id/config/ApplicationAuditorAwareTest.java`
+- Step 13 decision: `UserMapper` was **not excluded** from JaCoCo; we kept it in scope and added direct unit coverage.
+
+### Problems Encountered and How They Were Solved
+
+1. Problem: `ApplicationAuditorAware` assumed `Authentication#getPrincipal()` was always a `User`, causing `ClassCastException` for authenticated non-`User` principals in direct unit tests.
+    - Solution: Updated `ApplicationAuditorAware#getCurrentAuditor()` to guard principal type and return `Optional.empty()` when principal is not a `User`.
+
+2. Problem: Sonar/static analysis flagged `assertThrows` lambdas in new tests for having multiple possible runtime invocations.
+    - Solution: Refactored test setup to construct objects outside the lambda and keep only one invocation inside each `assertThrows` block.
+
+3. Problem: The plan expected malformed JSON and constraint-violation coverage paths; current handler implementation has no dedicated `@ExceptionHandler` methods for these and routes them through the generic `Exception` handler.
+    - Solution: Added direct unit tests that validate current fallback behavior for `HttpMessageNotReadableException` and `ConstraintViolationException`.
 
 ---
 
@@ -225,21 +245,21 @@ Both are `@SpringBootTest` tests that verify context loading. `SmokeIT` checks c
 - `src/test/java/com/uynguyen/aegis_id/security/SecurityConfigProdProfileIT.java`
 - `src/test/java/com/uynguyen/aegis_id/user/UserControllerIT.java`
 
-**New tests to create:**
+**New tests added in Phase 3:**
 
-- `src/test/java/.../user/UserMapperTest.java`
-- `src/test/java/.../handler/ApplicationExceptionHandlerTest.java`
-- `src/test/java/.../config/ApplicationAuditorAwareTest.java`
+- `src/test/java/com/uynguyen/aegis_id/user/UserMapperTest.java`
+- `src/test/java/com/uynguyen/aegis_id/handler/ApplicationExceptionHandlerTest.java`
+- `src/test/java/com/uynguyen/aegis_id/config/ApplicationAuditorAwareTest.java`
 
 **New integration support:**
 
 - `src/test/java/.../testsupport/PostgresTestContainerConfig.java`
 
-**Production code for reference (no changes):**
+**Production code covered in Phase 3 (with one targeted change):**
 
-- `src/main/java/com/uynguyen/aegis_id/user/UserMapper.java` — 0% coverage
-- `src/main/java/com/uynguyen/aegis_id/handler/ApplicationExceptionHandler.java` — 34% missed
-- `src/main/java/com/uynguyen/aegis_id/config/ApplicationAuditorAware.java` — 58% missed
+- `src/main/java/com/uynguyen/aegis_id/user/UserMapper.java` — now directly unit tested
+- `src/main/java/com/uynguyen/aegis_id/handler/ApplicationExceptionHandler.java` — now directly unit tested
+- `src/main/java/com/uynguyen/aegis_id/config/ApplicationAuditorAware.java` — directly unit tested + principal-type guard added
 
 ---
 
@@ -253,6 +273,9 @@ Both are `@SpringBootTest` tests that verify context loading. `SmokeIT` checks c
 6. Verify `ApplicationExceptionHandler` coverage gap reduced
 7. Verify Testcontainers PostgreSQL starts correctly for integration tests
 8. Verify `mvn test` does NOT start any Spring context or Docker container
+9. ✅ Phase 3 validation executed:
+    - `./mvnw -Dtest=UserMapperTest,ApplicationExceptionHandlerTest,ApplicationAuditorAwareTest test` → 23 tests, 0 failures
+    - `./mvnw test` → 151 tests, 0 failures
 
 ---
 
