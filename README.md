@@ -15,23 +15,17 @@ This project implements JWT-based authentication using Spring Security, Spring B
 
 ### 1. Generate RSA Keys
 
-Before running the application, you must generate the RSA key pair for JWT signing and verification and encode them as Base64:
+Before running the application, generate an RSA key pair in PEM format:
 
 ```sh
 # Generate the RSA private key
-openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
+openssl genpkey -algorithm RSA -out secrets/jwt/private_key.pem -pkeyopt rsa_keygen_bits:2048
 
 # Derive the public key
-openssl rsa -pubout -in private_key.pem -out public_key.pem
-
-# Extract Base64-encoded DER values (strip PEM headers and newlines)
-grep -v "^-" private_key.pem | tr -d '\n'   # → set as JWT_PRIVATE_KEY in your .env
-grep -v "^-" public_key.pem | tr -d '\n'    # → set as JWT_PUBLIC_KEY in your .env
+openssl rsa -pubout -in secrets/jwt/private_key.pem -out secrets/jwt/public_key.pem
 ```
 
-Copy the output of each command into your `.env` file as `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` respectively. Keep the PEM files out of the repository — they are only needed to generate the Base64 values.
-
-For CI/CD, store the Base64 values as secrets (`JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY`) in your GitHub repository settings and reference them in the workflow environment.
+For CI/CD, store the PEM files in your secret manager and provide file locations through environment variables (`JWT_PRIVATE_KEY_LOCATION` / `JWT_PUBLIC_KEY_LOCATION`).
 
 ### 2. Configure Environment Variables
 
@@ -49,9 +43,13 @@ DB_NAME=aegis_id
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
 
-# JWT RSA Keys (Base64-encoded DER format)
-JWT_PRIVATE_KEY=<your-base64-encoded-private-key>
-JWT_PUBLIC_KEY=<your-base64-encoded-public-key>
+# JWT key files on Docker host (mounted as Docker secrets)
+JWT_PRIVATE_KEY_FILE=./secrets/jwt/private_key.pem
+JWT_PUBLIC_KEY_FILE=./secrets/jwt/public_key.pem
+
+# JWT key locations inside container
+JWT_PRIVATE_KEY_LOCATION=file:/run/secrets/jwt_private_key
+JWT_PUBLIC_KEY_LOCATION=file:/run/secrets/jwt_public_key
 
 # JWT token expiration (milliseconds)
 JWT_ACCESS_TOKEN_EXPIRATION=900000
@@ -91,6 +89,8 @@ docker compose down
 ```
 
 By default, the application runs on `http://localhost:8080`.
+
+To rotate keys without rebuilding the image, replace the PEM files referenced by `JWT_PRIVATE_KEY_FILE` / `JWT_PUBLIC_KEY_FILE` and restart the `app` service.
 
 ## Testing
 

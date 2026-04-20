@@ -21,8 +21,8 @@ spring:
 app:
     security:
         jwt:
-            private-key: ${JWT_PRIVATE_KEY}
-            public-key: ${JWT_PUBLIC_KEY}
+            private-key-location: ${JWT_PRIVATE_KEY_LOCATION:classpath:keys/local-only/private_key.pem}
+            public-key-location: ${JWT_PUBLIC_KEY_LOCATION:classpath:keys/local-only/public_key.pem}
             access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:86400000}
             refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
             issuer: ${JWT_ISSUER:aegis-id}

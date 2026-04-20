@@ -5,19 +5,14 @@ import com.uynguyen.aegis_id.exception.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,8 +27,8 @@ public class JwtService {
     private static final String ACCESS_TOKEN = "ACCESS_TOKEN";
     private static final String REFRESH_TOKEN = "REFRESH_TOKEN";
 
-    private final PrivateKey privateKey;
-    private final PublicKey publicKey;
+    private final RSAPrivateKey privateKey;
+    private final RSAPublicKey publicKey;
     private final AtomicBoolean includeRolesClaim;
 
     @Value("${app.security.jwt.access-token-expiration}")
@@ -49,50 +44,21 @@ public class JwtService {
     private String audience;
 
     public JwtService(
-        @Value("${app.security.jwt.private-key}") String privateKeyBase64,
-        @Value("${app.security.jwt.public-key}") String publicKeyBase64,
+        final RSAPrivateKey privateKey,
+        final RSAPublicKey publicKey,
         @Value(
             "${app.security.jwt.include-roles-claim:false}"
         ) boolean includeRolesClaim
     ) {
+        this.privateKey = Objects.requireNonNull(
+            privateKey,
+            "privateKey must not be null"
+        );
+        this.publicKey = Objects.requireNonNull(
+            publicKey,
+            "publicKey must not be null"
+        );
         this.includeRolesClaim = new AtomicBoolean(includeRolesClaim);
-        final KeyFactory keyFactory;
-        try {
-            keyFactory = KeyFactory.getInstance("RSA");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(
-                "RSA algorithm is not available in this JVM",
-                e
-            );
-        }
-
-        try {
-            byte[] privateDecoded = Base64.getDecoder().decode(
-                privateKeyBase64
-            );
-            this.privateKey = keyFactory.generatePrivate(
-                new PKCS8EncodedKeySpec(privateDecoded)
-            );
-        } catch (IllegalArgumentException | InvalidKeySpecException e) {
-            throw new IllegalArgumentException(
-                "Invalid value for app.security.jwt.private-key (JWT_PRIVATE_KEY): " +
-                    "must be a Base64-encoded PKCS#8 RSA private key",
-                e
-            );
-        }
-
-        try {
-            byte[] publicDecoded = Base64.getDecoder().decode(publicKeyBase64);
-            this.publicKey = keyFactory.generatePublic(
-                new X509EncodedKeySpec(publicDecoded)
-            );
-        } catch (IllegalArgumentException | InvalidKeySpecException e) {
-            throw new IllegalArgumentException(
-                "Invalid value for app.security.jwt.public-key (JWT_PUBLIC_KEY): " +
-                    "must be a Base64-encoded X.509 RSA public key",
-                e
-            );
-        }
     }
 
     public String generateAccessToken(final TokenUserInfo userInfo) {

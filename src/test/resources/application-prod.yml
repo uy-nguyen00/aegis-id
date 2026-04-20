@@ -12,10 +12,8 @@ spring:
 app:
     security:
         jwt:
-            # These are throwaway test-only RSA keys used solely to bootstrap the Spring context
-            # during tests. They are NOT used in production and must never be treated as real keys.
-            private-key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC1DdfrK1UhzP0a7YiNXNig9gsmjk3eyfSZepZ7hUFft7eFZVyT5HKo8PAplS37joXXoOZT5ILUWya7KfWfHaiYofMBeK6lBhDK59mhdX2YcS4SpogpSxw3MVZtUulVRIBCjaU1YoaFHwhx0aSMnWNJAZgvfxEyrDTJJgvaNljBzDkFrEP4siz6ea2bPHeXqz9HdYIUEcoxEZ5hGndGBONbxZn5Q1E6gkTDA+gaLfdWTlqpUqihL8ZDD8QxE7ZfU60VMwPAV3BpoJJIDflSUJWttGglQdSbJXVrlfGigg35RYftZin0E9A4zAZSw9ChbTqPV6VUq7DyQGBx0eMD8IZrAgMBAAECggEAFZnYN/OMjaLSU8MhNpRsOBAC1o/F1J3Ns/3/NC961DusBptIR1DLKULNtHha6xde+pH0yO+LeGCDp3LjHh/AvK0dvAA0/fVSTZMJ0QyednCSaaE6v4p5jFAzmol40zaAAvC5VDw0Bm/kZwf3FNu2O8CX8pq7Z4tKJPGIGnm/byeFr05wMO70r0mD3jAYoWqZmkNPVkNxWps31jYt4YLlPs3A/eHpNfwHOK+U/HPyjrmvCma9Afvl17kHsrE5tEjxW4Y/+xQbSAm7KP8PVqg+tT6ftAN1upRaqcrpnqauAyPx9xRjCu5Q0caO1wDCDq+k1+JYfj6FxCy9F3DwAh5pEQKBgQDyPlNo+SH7oKJM0UiZoCul846NsQ7qvesl8oEMrRBSos6kqH425SvsRvXr7htETP1s0mTpd+BNs0Zh73Gz8hBkP3DbQwcnt4/gPb5lS4HpkFjVxBFXw4yIopD4k9eJ2S5AekF8Y8DQiiBC7W14wx5aG/sPwc7cN5Da+V50l4v1GQKBgQC/VfY5WFGSfB1GR1FyMz4mR/zF6KqNAch1C7BdWPy5yg4tm9kBlbKilhcIQJqKWa/Rxyem2BVtYHKbZemAl838b3046iQa2pCsMEhuBhnEhfQc2ilCqRpO+E+bukiItwb4gtCHvN9mOS9LpP+cabphTQx87u3bF0KNKKDDOFqkIwKBgCCmN9XBJkxk1RsnZfKWvOtMDV2ZjJok6MmfircrqDSLDvDwaLp7XtUkp0aaPACTo+CD5uf0qT2vuP/AJwIK0RzB1DMpMJCw0+p0R/IdIDBbrS16lJ/QkmNkDcgDHRzOMcas86CRTU6OH1UF7ShGnBOnC8qO45OYxaRN0eZC+rEZAoGAJmc4jnX9mWsz7QEvhb5nQQO95nM2mCq9c1CvS20q/JdjlR/sxHapbhy17sAYxKAPvAk/GivQ0S1Ek5A298qAW6R8+8lzCbjIxObEAuFSlrFUN95J3clXMHaCc/1FxbsGuSZ4eGYeaMQdjA9IBrrp39G5KfJC53CZuP9olQZgmwUCgYEA0XIpekq0/INzVZQ9Bhch7d2UclGawPJhyNWUwWAVov9UhZtPJ4FIf/rOZ+v7K7Ul1oov7ddVcfnnviPrU3rKwz4kHxRwMqyNrjPdPUUIVYW0oGNm5b+oEkg1ynBKw48msSmEkjQQb0a1mTCjPXrWmgmERAUFaeVovPkAyfFSA5w=
-            public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtQ3X6ytVIcz9Gu2IjVzYoPYLJo5N3sn0mXqWe4VBX7e3hWVck+RyqPDwKZUt+46F16DmU+SC1Fsmuyn1nx2omKHzAXiupQYQyufZoXV9mHEuEqaIKUscNzFWbVLpVUSAQo2lNWKGhR8IcdGkjJ1jSQGYL38RMqw0ySYL2jZYwcw5BaxD+LIs+nmtmzx3l6s/R3WCFBHKMRGeYRp3RgTjW8WZ+UNROoJEwwPoGi33Vk5aqVKooS/GQw/EMRO2X1OtFTMDwFdwaaCSSA35UlCVrbRoJUHUmyV1a5XxooIN+UWH7WYp9BPQOMwGUsPQoW06j1elVKuw8kBgcdHjA/CGawIDAQAB
+            private-key-location: classpath:keys/test-private.pem
+            public-key-location: classpath:keys/test-public.pem
             access-token-expiration: 86400000
             refresh-token-expiration: 604800000
             issuer: aegis-id
