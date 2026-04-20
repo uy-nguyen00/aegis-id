@@ -1,14 +1,14 @@
 {
   "properties": [
     {
-      "name": "app.security.jwt.private-key",
+      "name": "app.security.jwt.private-key-location",
       "type": "java.lang.String",
-      "description": "RSA private key for signing JWT tokens."
+      "description": "Resource location of the RSA private key used to sign JWT tokens. Supports classpath: and file: URIs."
     },
     {
-      "name": "app.security.jwt.public-key",
+      "name": "app.security.jwt.public-key-location",
       "type": "java.lang.String",
-      "description": "RSA public key for verifying JWT tokens."
+      "description": "Resource location of the RSA public key used to verify JWT tokens. Supports classpath: and file: URIs."
     },
     {
       "name": "app.security.jwt.access-token-expiration",

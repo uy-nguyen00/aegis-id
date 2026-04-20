@@ -12,7 +12,8 @@ import com.uynguyen.aegis_id.exception.ErrorCode;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,25 +27,17 @@ class JwtServiceTest {
     private static final String ISSUER = "test-issuer";
     private static final String AUDIENCE = "test-audience";
 
-    private String privateKeyBase64;
-    private String publicKeyBase64;
+    private RSAPrivateKey privateKey;
+    private RSAPublicKey publicKey;
     private JwtService jwtService;
 
     @BeforeEach
     void setUp() throws NoSuchAlgorithmException {
         final KeyPair keyPair = generateRsaKeyPair();
-        this.privateKeyBase64 = Base64.getEncoder().encodeToString(
-            keyPair.getPrivate().getEncoded()
-        );
-        this.publicKeyBase64 = Base64.getEncoder().encodeToString(
-            keyPair.getPublic().getEncoded()
-        );
+        this.privateKey = (RSAPrivateKey) keyPair.getPrivate();
+        this.publicKey = (RSAPublicKey) keyPair.getPublic();
 
-        this.jwtService = new JwtService(
-            this.privateKeyBase64,
-            this.publicKeyBase64,
-            true
-        );
+        this.jwtService = new JwtService(this.privateKey, this.publicKey, true);
         ReflectionTestUtils.setField(
             this.jwtService,
             "accessTokenExpiration",
@@ -65,32 +58,28 @@ class JwtServiceTest {
 
         @Test
         @DisplayName(
-            "Should throw IllegalArgumentException when private key is invalid"
+            "Should throw NullPointerException when private key is null"
         )
-        void shouldThrowWhenPrivateKeyIsInvalid() {
-            final IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> new JwtService("not-base64", publicKeyBase64, true)
+        void shouldThrowWhenPrivateKeyIsNull() {
+            final NullPointerException exception = assertThrows(
+                NullPointerException.class,
+                () -> new JwtService(null, publicKey, true)
             );
 
-            assertTrue(
-                exception.getMessage().contains("app.security.jwt.private-key")
-            );
+            assertEquals("privateKey must not be null", exception.getMessage());
         }
 
         @Test
         @DisplayName(
-            "Should throw IllegalArgumentException when public key is invalid"
+            "Should throw NullPointerException when public key is null"
         )
-        void shouldThrowWhenPublicKeyIsInvalid() {
-            final IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> new JwtService(privateKeyBase64, "not-base64", true)
+        void shouldThrowWhenPublicKeyIsNull() {
+            final NullPointerException exception = assertThrows(
+                NullPointerException.class,
+                () -> new JwtService(privateKey, null, true)
             );
 
-            assertTrue(
-                exception.getMessage().contains("app.security.jwt.public-key")
-            );
+            assertEquals("publicKey must not be null", exception.getMessage());
         }
     }
 
@@ -197,8 +186,8 @@ class JwtServiceTest {
         )
         void shouldThrowWhenRefreshTokenIsExpired() {
             final JwtService expiredJwtService = new JwtService(
-                privateKeyBase64,
-                publicKeyBase64,
+                privateKey,
+                publicKey,
                 true
             );
             ReflectionTestUtils.setField(

@@ -35,5 +35,7 @@ build/
 ### Project files ###
 .env
 .sdkmanrc
+secrets/jwt/*
+!secrets/jwt/.gitkeep
 src/main/resources/keys/local-only/
 node_modules/

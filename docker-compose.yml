@@ -34,12 +34,17 @@ services:
             DB_NAME: ${DB_NAME}
             DB_USERNAME: ${DB_USERNAME}
             DB_PASSWORD: ${DB_PASSWORD}
-            JWT_PRIVATE_KEY: ${JWT_PRIVATE_KEY}
-            JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY}
+            JWT_PRIVATE_KEY_LOCATION: ${JWT_PRIVATE_KEY_LOCATION:-file:/run/secrets/jwt_private_key}
+            JWT_PUBLIC_KEY_LOCATION: ${JWT_PUBLIC_KEY_LOCATION:-file:/run/secrets/jwt_public_key}
             JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION}
             JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION}
             JWT_INCLUDE_ROLES_CLAIM: ${JWT_INCLUDE_ROLES_CLAIM:-false}
             MANAGEMENT_PORT: ${MANAGEMENT_PORT:-8081}
+        secrets:
+            - source: jwt_private_key
+              target: jwt_private_key
+            - source: jwt_public_key
+              target: jwt_public_key
         depends_on:
             postgres:
                 condition: service_healthy
@@ -55,6 +60,12 @@ services:
             - "5050:80"
         depends_on:
             - postgres
+
+secrets:
+    jwt_private_key:
+        file: ${JWT_PRIVATE_KEY_FILE:-./secrets/jwt/private_key.pem}
+    jwt_public_key:
+        file: ${JWT_PUBLIC_KEY_FILE:-./secrets/jwt/public_key.pem}
 
 volumes:
     postgres:
