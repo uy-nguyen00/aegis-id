@@ -23,6 +23,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
+        user: "${APP_UID:-1000}:${APP_GID:-1000}"
         ports:
             - "8080:8080"
             - "8081:8081"
@@ -49,17 +50,6 @@ services:
             postgres:
                 condition: service_healthy
         restart: unless-stopped
-
-    pgadmin:
-        container_name: pgadmin
-        image: dpage/pgadmin4
-        environment:
-            PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
-            PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-root}
-        ports:
-            - "5050:80"
-        depends_on:
-            - postgres
 
 secrets:
     jwt_private_key:
